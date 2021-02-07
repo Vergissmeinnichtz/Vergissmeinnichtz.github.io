@@ -26,5 +26,14 @@
       <description>Hello World Hope I can keep my dream.</description>
     </item>
     
+    <item>
+      <title>How to Build V8</title>
+      <link>https://vergissmeinnichtz.github.io/posts/build-v8/</link>
+      <pubDate>Sun, 07 Feb 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://vergissmeinnichtz.github.io/posts/build-v8/</guid>
+      <description>Install depot_tools git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git vim /etc/profile Add `export PATH=$PATH:&amp;#34;/path/to/depot_tools&amp;#34;` to `.profile` cd /depot_tools &amp;amp;&amp;amp; ./gclient Install ninja git clone https://github.com/ninja-build/ninja.git cd ninja &amp;amp;&amp;amp; ./configure.py --bootstrap &amp;amp;&amp;amp; cd .. vim /etc/profile Add `export PATH=$PATH:&amp;#34;/path/to/ninja&amp;#34;` to `.profile` source /etc/profile Download the source code of V8 fetch v8 Patch and compile the debug version cd v8 # git checkout 8.6.358 git reset --hard +hash gclient sync #apply patch git apply &amp;lt; &amp;#34;path/to/tctf.diff&amp;#34; tools/dev/v8gen.</description>
+    </item>
+    
   </channel>
 </rss>
