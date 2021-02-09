@@ -25,7 +25,8 @@ Exp from pwn import * context.log_level = &amp;#34;debug&amp;#34; context.termin
       <pubDate>Sun, 07 Feb 2021 00:00:00 +0000</pubDate>
       
       <guid>https://vergissmeinnichtz.github.io/about/</guid>
-      <description>A CTFer Interested In Crypto And Pwn.</description>
+      <description>A CTFer Interested In Crypto And Pwn.
+E-mail: verhan@163.com</description>
     </item>
     
     <item>

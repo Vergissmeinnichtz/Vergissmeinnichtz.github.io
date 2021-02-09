@@ -73,7 +73,7 @@ r<span style="color:#f92672">.</span>sendline(p64(system_addr) <span style="colo
 csu(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>,bss <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x108</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">0</span>,bss <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x100</span>,main_addr,<span style="color:#ae81ff">0x40</span>)
 
 r<span style="color:#f92672">.</span>interactive()
-</code></pre></div><h3 id="flippidy">flippidy</h3>
+</code></pre></div><h3 id="flippidyrecurrence">flippidy(Recurrence)</h3>
 <h4 id="analysis-1">Analysis</h4>
 <p>This is a no-PIE program.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">Arch:     amd64-64-little
@@ -282,7 +282,7 @@ flip() <span style="color:#75715e"># get shell</span>
 
 r<span style="color:#f92672">.</span>interactive()
 </code></pre></div><h2 id="crypto">Crypto</h2>
-<h3 id="garbled">garbled</h3>
+<h3 id="garbledrecurrence">garbled(Recurrence)</h3>
 <h4 id="analysis-2">Analysis</h4>
 <p>This is a <code>Garbled Circuit</code> challenge. We should recover the <code>inputs</code> to get flag.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># obtain_flag.py</span>
@@ -618,7 +618,7 @@ Assume the <code>input labels(keys)</code> are <code>[[a0,a1],[b0,b1]]</code>, a
     encrypt[c1,a1,b1],encrypt[<span style="color:#ae81ff">0</span>,a1,b1],
     ]
 [[l0,v0],[l1,v1],[l2,v2],[l3,v3]] <span style="color:#f92672">=</span> random_suffle(enc)
-</code></pre></div><p>And the <code>Garbled Circuit</code> combine these <code>output lable</code> as <code>input lables</code> to generate more <code>output lable</code> util end.</p>
+</code></pre></div><p>And the <code>Garbled Circuit</code> combine these <code>output lable</code> as <code>input lables</code> to generate more <code>output lable</code> until end.</p>
 <p>We have the early <code>inputs lables</code> and <code>g_tables</code>, so we can use <code>MITM</code> to attack the <code>Garbled Circuit</code> with <code>validation</code>. And brute the order before <code>random suffle</code>. So we can recover the <code>keys</code> and finally get the flag.</p>
 <h4 id="exp-2">Exp</h4>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C++" data-lang="C++"><span style="color:#75715e">// exp.c
@@ -845,11 +845,114 @@ xor_flag <span style="color:#f92672">=</span> <span style="color:#e6db74">b</spa
 flag <span style="color:#f92672">=</span> xor(m<span style="color:#f92672">.</span>digest(),xor_flag)
 <span style="color:#66d9ef">print</span>(flag)
 <span style="color:#75715e"># dice{N0w_YoUr3_Th1nkIn6_Wi7H_pR0t0c015}</span>
+</code></pre></div><h3 id="benalohrecurrence">benaloh(Recurrence)</h3>
+<h4 id="analysis-3">Analysis</h4>
+<p>This is a <a href="https://en.wikipedia.org/wiki/Benaloh_cryptosystem">Benaloh cryptosystem</a> challenge, the code is short:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># benaloh</span>
+<span style="color:#f92672">from</span> Crypto.Random.random <span style="color:#f92672">import</span> randrange
+<span style="color:#f92672">from</span> Crypto.Util.number <span style="color:#f92672">import</span> getPrime, GCD
+
+r <span style="color:#f92672">=</span> <span style="color:#ae81ff">17</span>
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">keygen</span>():
+	<span style="color:#66d9ef">while</span> True:
+		p <span style="color:#f92672">=</span> getPrime(<span style="color:#ae81ff">1024</span>)
+		a, b <span style="color:#f92672">=</span> divmod(p<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, r)
+		<span style="color:#66d9ef">if</span> b <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">and</span> GCD(r, a) <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>:
+			<span style="color:#66d9ef">break</span>
+	<span style="color:#66d9ef">while</span> True:
+		q <span style="color:#f92672">=</span> getPrime(<span style="color:#ae81ff">1024</span>)
+		<span style="color:#66d9ef">if</span> GCD(r, q<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>:
+			<span style="color:#66d9ef">break</span>
+	n <span style="color:#f92672">=</span> p<span style="color:#f92672">*</span>q
+	phi <span style="color:#f92672">=</span> (p<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">*</span>(q<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">//</span>r
+	y <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+	<span style="color:#66d9ef">while</span> True:
+		y <span style="color:#f92672">=</span> randrange(n)
+		x <span style="color:#f92672">=</span> pow(y, phi, n)
+		<span style="color:#66d9ef">if</span> x <span style="color:#f92672">!=</span> <span style="color:#ae81ff">1</span>:
+			<span style="color:#66d9ef">break</span>
+	log <span style="color:#f92672">=</span> {pow(x, i, n): i <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(r)}
+	<span style="color:#66d9ef">return</span> (n, y), (n, phi, log)
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">encrypt</span>(data, pk):
+	n, y <span style="color:#f92672">=</span> pk
+	u <span style="color:#f92672">=</span> randrange(n)
+	a <span style="color:#f92672">=</span> randrange(n)
+	c <span style="color:#f92672">=</span> randrange(n)
+	<span style="color:#66d9ef">for</span> m <span style="color:#f92672">in</span> data<span style="color:#f92672">.</span>hex():
+		<span style="color:#66d9ef">yield</span> pow(y, int(m, <span style="color:#ae81ff">16</span>), n) <span style="color:#f92672">*</span> pow(u, r, n) <span style="color:#f92672">%</span> n
+		u <span style="color:#f92672">=</span> (a<span style="color:#f92672">*</span>u <span style="color:#f92672">+</span> c) <span style="color:#f92672">%</span> n
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">decrypt</span>(data, sk):
+	n, phi, log <span style="color:#f92672">=</span> sk
+	<span style="color:#66d9ef">return</span> bytes<span style="color:#f92672">.</span>fromhex(<span style="color:#e6db74">&#39;&#39;</span><span style="color:#f92672">.</span>join(f<span style="color:#e6db74">&#39;{log[pow(z, phi, n)]:x}&#39;</span> <span style="color:#66d9ef">for</span> z <span style="color:#f92672">in</span> data))
+
+<span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;__main__&#39;</span>:
+	<span style="color:#f92672">from</span> local <span style="color:#f92672">import</span> flag
+	pk, sk <span style="color:#f92672">=</span> keygen()
+	<span style="color:#66d9ef">print</span>(pk)
+	<span style="color:#66d9ef">for</span> z <span style="color:#f92672">in</span> encrypt(flag, pk):
+		<span style="color:#66d9ef">print</span>(z)
+
+</code></pre></div><p>The block size is <code>r = 17</code>, we have <code>public key</code> and <code>encrypted flag</code>. But different from the standard <code>Benaloh cryptosystem</code>, the <code>nonce</code> of this challenge is generated with <code>LCG</code>. But we don&rsquo;t know <code>a,u,c</code>.</p>
+<p>So what can we do? Focus on the <code>encrypted flag</code>, also called <code>z</code> in this challenge. We can write its expression:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">z_i <span style="color:#f92672">=</span> (y <span style="color:#f92672">**</span> m <span style="color:#f92672">*</span> u_i <span style="color:#f92672">**</span> r) <span style="color:#f92672">%</span> n
+u_i <span style="color:#f92672">=</span> (a <span style="color:#f92672">*</span> u_(i<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> c) <span style="color:#f92672">%</span> n
+</code></pre></div><p>If we have more  <code>z-m pair</code>, then we can construct some multivariate polynomials with unkowned <code>u,a,c</code>, use <a href="https://en.wikipedia.org/wiki/Gr%C3%B6bner_basis">Gröbner basis</a> reduction to help us for finding roots. It also preserves some key properties about the original set. In <code>sagemath</code> the output just like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">[c<span style="color:#f92672">^</span><span style="color:#ae81ff">17</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">13458759594676198214694259395597811037811941351192625227467096501437492626016103500732912703741531580440688721418838601356917454469197042860724974820711811807100911025568783389529011375041774037357224005532374737711385620250882965751966936631506501563981475218917679272036145000202705372625367221715684331874911123897488465876418098777295294085721730060353781081936511989823993750197757906274895327225414708735228502620853964519743121169419595741484437884476968407623319417909836503756421684133026872563003628309754191206638310830457160948939228910390136165954060484629537550098482941917500740029457719651678576263154</span>, u <span style="color:#f92672">+</span> <span style="color:#ae81ff">316517663849777910225660080408784696167924695113642531974131497480910378366220174342126802849049539663694903310250609244514828218236832782037217816236893097704270918578097042085736644370848172633750954486260895306171096242584274887827086225061772333809429993942553814439329476648071612609884623299988660650179852653163795008516189222405687351351109996651789580351715791017438004730807486178553378753383208033005732492151858373741617384858699269732745326858016880380595482272818312327147435234514885344494904297204434448240694768364394802707422951925732088102047687537430858233649919876359703515785224783225069089980</span><span style="color:#f92672">*</span>c, a <span style="color:#f92672">+</span> <span style="color:#ae81ff">1661216876440720795949971760316375297223780761108674238540808158213078980164656368815536594328510194746888627111987313473237775055677284466208525500885764198070567384544945702715900113900083864927826969971664844458658182797143288816769247910804809014527517142248172045349023280003970829981831679105885916798790488166987740245714277585192487684558508003531661909679977119963644699703649749483269350109143839889546691324949566145320193582552061487407920959141668364668452895857576184480913586198770372641315376888430566581697787292145901485440997213094118917877437294945649019459331559374549028782748215151722129896006</span>]
+</code></pre></div><p>We can use these informations to help us for solving this challenge and finally get the flag.</p>
+<h4 id="exp-3">Exp</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># exp.sage</span>
+<span style="color:#f92672">from</span> Crypto.Util.number <span style="color:#f92672">import</span> <span style="color:#f92672">*</span> 
+
+flag_head <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;dice{&#34;</span>
+flag_head <span style="color:#f92672">=</span> flag_head<span style="color:#f92672">.</span>hex()
+
+r <span style="color:#f92672">=</span> <span style="color:#ae81ff">17</span>
+
+data <span style="color:#f92672">=</span> open(<span style="color:#e6db74">&#34;output.txt&#34;</span>,<span style="color:#e6db74">&#34;rb&#34;</span>)<span style="color:#f92672">.</span>readlines()
+(n, y) <span style="color:#f92672">=</span> eval(data[<span style="color:#ae81ff">0</span>])
+F <span style="color:#f92672">=</span> Zmod(n)
+y <span style="color:#f92672">=</span> F(y)
+enc <span style="color:#f92672">=</span> [F(i) <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> data[<span style="color:#ae81ff">1</span>:]]
+
+m <span style="color:#f92672">=</span> dict()
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0x10</span>):
+    m[y <span style="color:#f92672">^</span> i] <span style="color:#f92672">=</span> i
+
+P<span style="color:#f92672">.&lt;</span>u, a, c<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> PolynomialRing(F)
+
+G <span style="color:#f92672">=</span> []
+pol <span style="color:#f92672">=</span> u
+<span style="color:#75715e"># z = y ^ m * u ^ r</span>
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(len(flag_head)):
+    g <span style="color:#f92672">=</span> pol <span style="color:#f92672">^</span> r <span style="color:#f92672">-</span> enc[i] <span style="color:#f92672">/</span> y <span style="color:#f92672">^</span> int(flag_head[i],<span style="color:#ae81ff">16</span>)
+    G<span style="color:#f92672">.</span>append(g)
+    pol <span style="color:#f92672">=</span> a <span style="color:#f92672">*</span> pol <span style="color:#f92672">+</span> c
+
+B <span style="color:#f92672">=</span> Ideal(G)<span style="color:#f92672">.</span>groebner_basis()
+<span style="color:#66d9ef">print</span>(B)
+
+flag <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+<span style="color:#75715e"># u = - x * c</span>
+<span style="color:#75715e"># c ^ r = - y</span>
+<span style="color:#75715e"># z / ( (- x) ^ r * - y) = z / ((u / c) ^ r * c ^ r) = z / (u ^ r)</span>
+pol <span style="color:#f92672">=</span> <span style="color:#f92672">-</span> B[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>monomial_coefficient(c) <span style="color:#f92672">*</span> c
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(len(enc)):
+    result <span style="color:#f92672">=</span> enc[i] <span style="color:#f92672">/</span> (pol<span style="color:#f92672">.</span>monomial_coefficient(c) <span style="color:#f92672">^</span> r <span style="color:#f92672">*</span> <span style="color:#f92672">-</span> B[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>constant_coefficient())
+    flag <span style="color:#f92672">&lt;&lt;=</span> <span style="color:#ae81ff">4</span>
+    flag <span style="color:#f92672">|=</span> m[result]
+    pol <span style="color:#f92672">=</span> <span style="color:#f92672">-</span> B[<span style="color:#ae81ff">2</span>]<span style="color:#f92672">.</span>constant_coefficient() <span style="color:#f92672">*</span> pol <span style="color:#f92672">+</span> c
+
+flag <span style="color:#f92672">=</span> long_to_bytes(flag)
+<span style="color:#66d9ef">print</span>(flag)
+<span style="color:#75715e"># dice{gr:obner!_!}</span>
 </code></pre></div><h2 id="reverse">Reverse</h2>
 <h3 id="babymix">babymix</h3>
-<h4 id="analysis-3">Analysis</h4>
+<h4 id="analysis-4">Analysis</h4>
 <p>Just use z3 to solve it.</p>
-<h4 id="exp-3">Exp</h4>
+<h4 id="exp-4">Exp</h4>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python</span>
 <span style="color:#f92672">from</span> z3 <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
 
@@ -893,9 +996,11 @@ flag <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;
     flag <span style="color:#f92672">+=</span> chr(m[i]<span style="color:#f92672">.</span>as_long())
 <span style="color:#66d9ef">print</span>(flag)
 </code></pre></div><h2 id="references">References</h2>
-<p><a href="https://ctf-wiki.org/pwn/linux/stackoverflow/medium-rop/#ret2csu">https://ctf-wiki.org/pwn/linux/stackoverflow/medium-rop/#ret2csu</a>
-<a href="https://teamrocketist.github.io/2021/02/08/Pwn-DiceCTF2021-flippidy/">https://teamrocketist.github.io/2021/02/08/Pwn-DiceCTF2021-flippidy/</a>
-<a href="https://www.josephsurin.me/posts/2021-02-08-dicectf-2021-garbled">https://www.josephsurin.me/posts/2021-02-08-dicectf-2021-garbled</a></p>
+<p><a href="https://ctf-wiki.org/pwn/linux/stackoverflow/medium-rop/#ret2csu">https://ctf-wiki.org/pwn/linux/stackoverflow/medium-rop/#ret2csu</a></p>
+<p><a href="https://teamrocketist.github.io/2021/02/08/Pwn-DiceCTF2021-flippidy/">https://teamrocketist.github.io/2021/02/08/Pwn-DiceCTF2021-flippidy/</a></p>
+<p><a href="https://www.josephsurin.me/posts/2021-02-08-dicectf-2021-garbled">https://www.josephsurin.me/posts/2021-02-08-dicectf-2021-garbled</a></p>
+<p><a href="https://s3v3ru5.github.io/notes/DiceCTF2021#benaloh">https://s3v3ru5.github.io/notes/DiceCTF2021#benaloh</a></p>
+<p><a href="https://priv.pub/posts/dicectf-2021/">https://priv.pub/posts/dicectf-2021/</a></p>
 ]]></content>
         </item>
         
