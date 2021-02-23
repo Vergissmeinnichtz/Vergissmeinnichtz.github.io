@@ -6,8 +6,881 @@
         <generator>Hugo -- gohugo.io</generator>
         <language>en-us</language>
         <copyright>&lt;a href=&#34;https://creativecommons.org/licenses/by-nc/4.0/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CC BY-NC 4.0&lt;/a&gt;</copyright>
-        <lastBuildDate>Mon, 08 Feb 2021 00:00:00 +0000</lastBuildDate>
+        <lastBuildDate>Tue, 23 Feb 2021 00:00:00 +0000</lastBuildDate>
         <atom:link href="https://vergissmeinnichtz.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+        
+        <item>
+            <title>2021UnionCTF-WriteUp</title>
+            <link>https://vergissmeinnichtz.github.io/posts/2021unionctf-writeup/</link>
+            <pubDate>Tue, 23 Feb 2021 00:00:00 +0000</pubDate>
+            
+            <guid>https://vergissmeinnichtz.github.io/posts/2021unionctf-writeup/</guid>
+            <description>Introduction This is a small write up and recurrence for 2021UnionCTF.
+Crypto human_server Analysis This is a Diffie-Hellman key exchange challenge:
+import os, random, hashlib, textwrap, json from Crypto.Cipher import AES from Crypto.Util.Padding import pad, unpad from Crypto.Util.number import getPrime, long_to_bytes from fastecdsa.curve import secp256k1 from fastecdsa.point import Point FLAG = b&amp;#39;union{XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX}&amp;#39; CURVE = secp256k1 ORDER = CURVE.q G = CURVE.G class EllipticCurveKeyExchange():∏ def __init__(self): self.private = random.randint(0,ORDER) self.public = self.</description>
+            <content type="html"><![CDATA[<h2 id="introduction">Introduction</h2>
+<p>This is a small write up and recurrence for 2021UnionCTF.</p>
+<h2 id="crypto">Crypto</h2>
+<h3 id="human_server">human_server</h3>
+<h4 id="analysis">Analysis</h4>
+<p>This is a <code>Diffie-Hellman key exchange</code> challenge:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> os<span style="color:#f92672">,</span> random<span style="color:#f92672">,</span> hashlib<span style="color:#f92672">,</span> textwrap<span style="color:#f92672">,</span> json
+<span style="color:#f92672">from</span> Crypto.Cipher <span style="color:#f92672">import</span> AES
+<span style="color:#f92672">from</span> Crypto.Util.Padding <span style="color:#f92672">import</span> pad, unpad
+<span style="color:#f92672">from</span> Crypto.Util.number <span style="color:#f92672">import</span> getPrime, long_to_bytes
+
+
+<span style="color:#f92672">from</span> fastecdsa.curve <span style="color:#f92672">import</span> secp256k1
+<span style="color:#f92672">from</span> fastecdsa.point <span style="color:#f92672">import</span> Point
+
+FLAG <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;union{XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX}&#39;</span>
+
+CURVE <span style="color:#f92672">=</span> secp256k1
+ORDER <span style="color:#f92672">=</span> CURVE<span style="color:#f92672">.</span>q
+G <span style="color:#f92672">=</span> CURVE<span style="color:#f92672">.</span>G
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EllipticCurveKeyExchange</span>():<span style="color:#960050;background-color:#1e0010">∏</span>
+    <span style="color:#66d9ef">def</span> __init__(self):
+        self<span style="color:#f92672">.</span>private <span style="color:#f92672">=</span> random<span style="color:#f92672">.</span>randint(<span style="color:#ae81ff">0</span>,ORDER)
+        self<span style="color:#f92672">.</span>public <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>get_public_key()
+        self<span style="color:#f92672">.</span>recieved <span style="color:#f92672">=</span> None
+        self<span style="color:#f92672">.</span>nonce <span style="color:#f92672">=</span> None
+        self<span style="color:#f92672">.</span>key <span style="color:#f92672">=</span> None
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_public_key</span>(self):
+        A <span style="color:#f92672">=</span> G <span style="color:#f92672">*</span> self<span style="color:#f92672">.</span>private
+        <span style="color:#66d9ef">return</span> A
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">send_public</span>(self):
+        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">print</span>(json<span style="color:#f92672">.</span>dumps({<span style="color:#e6db74">&#34;Px&#34;</span> : self<span style="color:#f92672">.</span>public<span style="color:#f92672">.</span>x, <span style="color:#e6db74">&#34;Py&#34;</span> : self<span style="color:#f92672">.</span>public<span style="color:#f92672">.</span>y}))
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">receive_public</span>(self, data):
+        <span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">        Remember to include the nonce for ultra-secure key exchange!
+</span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+        Px <span style="color:#f92672">=</span> int(data[<span style="color:#e6db74">&#34;Px&#34;</span>])
+        Py <span style="color:#f92672">=</span> int(data[<span style="color:#e6db74">&#34;Py&#34;</span>])
+        self<span style="color:#f92672">.</span>recieved <span style="color:#f92672">=</span> Point(Px, Py, curve<span style="color:#f92672">=</span>secp256k1)
+        self<span style="color:#f92672">.</span>nonce <span style="color:#f92672">=</span> int(data[<span style="color:#e6db74">&#39;nonce&#39;</span>])
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_shared_secret</span>(self):
+        <span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">        Generates the ultra secure secret with added nonce randomness
+</span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+        <span style="color:#66d9ef">assert</span> self<span style="color:#f92672">.</span>nonce<span style="color:#f92672">.</span>bit_length() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">64</span>
+        self<span style="color:#f92672">.</span>key <span style="color:#f92672">=</span> (self<span style="color:#f92672">.</span>recieved <span style="color:#f92672">*</span> self<span style="color:#f92672">.</span>private)<span style="color:#f92672">.</span>x <span style="color:#f92672">^</span> self<span style="color:#f92672">.</span>nonce
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">check_fingerprint</span>(self, h2: str):
+        <span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">        If this is failing, remember that you must send the SAME
+</span><span style="color:#e6db74">        nonce to both Alice and Bob for the shared secret to match
+</span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+        h1 <span style="color:#f92672">=</span> hashlib<span style="color:#f92672">.</span>sha256(long_to_bytes(self<span style="color:#f92672">.</span>key))<span style="color:#f92672">.</span>hexdigest()
+        <span style="color:#66d9ef">return</span> h1 <span style="color:#f92672">==</span> h2
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">send_fingerprint</span>(self):
+        <span style="color:#66d9ef">return</span> hashlib<span style="color:#f92672">.</span>sha256(long_to_bytes(self<span style="color:#f92672">.</span>key))<span style="color:#f92672">.</span>hexdigest()
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">print_header</span>(title: str):
+    <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n\n</span><span style="color:#e6db74">&#39;</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#39;*&#39;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">64</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#39;</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#39;*&#39;</span><span style="color:#f92672">+</span>title<span style="color:#f92672">.</span>center(<span style="color:#ae81ff">62</span>)<span style="color:#f92672">+</span><span style="color:#e6db74">&#39;*</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#39;</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#39;*&#39;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">64</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n\n</span><span style="color:#e6db74">&#39;</span>)
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">input_json</span>(prompt: str):
+    data <span style="color:#f92672">=</span> input(prompt)
+    <span style="color:#66d9ef">try</span>:
+        <span style="color:#66d9ef">return</span> json<span style="color:#f92672">.</span>loads(data)
+    <span style="color:#66d9ef">except</span>:
+        <span style="color:#66d9ef">print</span>({<span style="color:#e6db74">&#34;error&#34;</span>: <span style="color:#e6db74">&#34;Input must be sent as a JSON object&#34;</span>})
+        exit()
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">encrypt_flag</span>(shared_secret: int):
+    iv <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>urandom(<span style="color:#ae81ff">16</span>)
+    key <span style="color:#f92672">=</span> hashlib<span style="color:#f92672">.</span>sha1(long_to_bytes(shared_secret))<span style="color:#f92672">.</span>digest()[:<span style="color:#ae81ff">16</span>]
+    cipher <span style="color:#f92672">=</span> AES<span style="color:#f92672">.</span>new(key, AES<span style="color:#f92672">.</span>MODE_CBC, iv)
+    ciphertext <span style="color:#f92672">=</span> cipher<span style="color:#f92672">.</span>encrypt(pad(FLAG, <span style="color:#ae81ff">16</span>))
+
+    data <span style="color:#f92672">=</span> {}
+    data[<span style="color:#e6db74">&#39;iv&#39;</span>] <span style="color:#f92672">=</span> iv<span style="color:#f92672">.</span>hex()
+    data[<span style="color:#e6db74">&#39;encrypted_flag&#39;</span>] <span style="color:#f92672">=</span> ciphertext<span style="color:#f92672">.</span>hex()
+    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">print</span>(json<span style="color:#f92672">.</span>dumps(data))
+
+
+Alice <span style="color:#f92672">=</span> EllipticCurveKeyExchange()
+Bob <span style="color:#f92672">=</span> EllipticCurveKeyExchange()
+
+print_header(<span style="color:#e6db74">&#39;Welcome!&#39;</span>) 
+message <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Hello! Thanks so much for jumping in to help. Ever since everyone left WhatsApp, we&#39;ve had a hard time keeping up with communications. We&#39;re hoping by outsourcing the message exchange to some CTF players we&#39;ll keep the load down on our servers... All messages are end-to-end encrypted so there&#39;s no privacy issues at all, we&#39;ve even rolling out our new ultra-secure key exchange with enhanced randomness! Again, we really appreciate the help, feel free to add this experience to your CV!&#34;</span>
+welcome <span style="color:#f92672">=</span> textwrap<span style="color:#f92672">.</span>fill(message, width<span style="color:#f92672">=</span><span style="color:#ae81ff">64</span>)          
+<span style="color:#66d9ef">print</span>(welcome)
+
+print_header(<span style="color:#e6db74">&#39;Alice sends public key&#39;</span>)
+Alice<span style="color:#f92672">.</span>send_public()
+
+print_header(<span style="color:#e6db74">&#34;Please forward Alice&#39;s key to Bob&#34;</span>)
+alice_to_bob <span style="color:#f92672">=</span> input_json(<span style="color:#e6db74">&#39;Send to Bob: &#39;</span>)
+Bob<span style="color:#f92672">.</span>receive_public(alice_to_bob)
+
+print_header(<span style="color:#e6db74">&#39;Bob sends public key&#39;</span>)
+Bob<span style="color:#f92672">.</span>send_public()
+
+print_header(<span style="color:#e6db74">&#34;Please forward Bob&#39;s key to Alice&#34;</span>)
+bob_to_alice <span style="color:#f92672">=</span> input_json(<span style="color:#e6db74">&#39;Send to Alice: &#39;</span>)
+Alice<span style="color:#f92672">.</span>receive_public(bob_to_alice)
+            
+Alice<span style="color:#f92672">.</span>get_shared_secret()
+Bob<span style="color:#f92672">.</span>get_shared_secret()
+
+print_header(<span style="color:#e6db74">&#39;Key verification in progress&#39;</span>)
+alice_happy <span style="color:#f92672">=</span> Alice<span style="color:#f92672">.</span>check_fingerprint(Bob<span style="color:#f92672">.</span>send_fingerprint())
+bob_happy <span style="color:#f92672">=</span> Bob<span style="color:#f92672">.</span>check_fingerprint(Alice<span style="color:#f92672">.</span>send_fingerprint())
+<span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> alice_happy <span style="color:#f92672">or</span> <span style="color:#f92672">not</span> bob_happy:
+    <span style="color:#66d9ef">print</span>({<span style="color:#e6db74">&#34;error&#34;</span>: <span style="color:#e6db74">&#34;Alice and Bob panicked: Potential MITM attack in progress!!&#34;</span>})
+    exit()
+
+print_header(<span style="color:#e6db74">&#39;Alice sends encrypted flag to Bob&#39;</span>)
+encrypt_flag(Alice<span style="color:#f92672">.</span>key)
+</code></pre></div><p>We can use <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">Man-in-the-middle attack</a> to solve this challenge.</p>
+<h4 id="exp">Exp</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python</span>
+<span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+<span style="color:#f92672">import</span> json<span style="color:#f92672">,</span> hashlib
+<span style="color:#f92672">from</span> fastecdsa.curve <span style="color:#f92672">import</span> secp256k1
+<span style="color:#f92672">from</span> fastecdsa.point <span style="color:#f92672">import</span> Point
+<span style="color:#f92672">from</span> Crypto.Cipher <span style="color:#f92672">import</span> AES
+<span style="color:#f92672">from</span> Crypto.Util.number <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;debug&#34;</span>
+
+CURVE <span style="color:#f92672">=</span> secp256k1
+ORDER <span style="color:#f92672">=</span> CURVE<span style="color:#f92672">.</span>q
+G <span style="color:#f92672">=</span> CURVE<span style="color:#f92672">.</span>G
+
+r <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#34;134.122.111.232&#34;</span>,<span style="color:#ae81ff">54321</span>)
+
+r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;{</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">Px</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">: &#34;</span>)
+Px <span style="color:#f92672">=</span> int(r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;,&#34;</span>, drop <span style="color:#f92672">=</span> True))
+r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">Py</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">: &#34;</span>)
+Py <span style="color:#f92672">=</span> int(r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;}&#34;</span>, drop <span style="color:#f92672">=</span> True))
+Pa <span style="color:#f92672">=</span> Point(Px, Py, curve <span style="color:#f92672">=</span> secp256k1)
+noncea <span style="color:#f92672">=</span> Pa<span style="color:#f92672">.</span>x
+P <span style="color:#f92672">=</span> json<span style="color:#f92672">.</span>dumps({<span style="color:#e6db74">&#34;Px&#34;</span> : G<span style="color:#f92672">.</span>x, <span style="color:#e6db74">&#34;Py&#34;</span> : G<span style="color:#f92672">.</span>y, <span style="color:#e6db74">&#34;nonce&#34;</span> : noncea})
+r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Send to Bob: &#34;</span>)
+r<span style="color:#f92672">.</span>sendline(P)
+
+r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;{</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">Px</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">: &#34;</span>)
+Px <span style="color:#f92672">=</span> int(r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;,&#34;</span>, drop <span style="color:#f92672">=</span> True))
+r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">Py</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">: &#34;</span>)
+Py <span style="color:#f92672">=</span> int(r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;}&#34;</span>, drop <span style="color:#f92672">=</span> True))
+Pb <span style="color:#f92672">=</span> Point(Px, Py, curve <span style="color:#f92672">=</span> secp256k1)
+nonceb <span style="color:#f92672">=</span> Pb<span style="color:#f92672">.</span>x
+P <span style="color:#f92672">=</span> json<span style="color:#f92672">.</span>dumps({<span style="color:#e6db74">&#34;Px&#34;</span> : G<span style="color:#f92672">.</span>x, <span style="color:#e6db74">&#34;Py&#34;</span> : G<span style="color:#f92672">.</span>y, <span style="color:#e6db74">&#34;nonce&#34;</span> : nonceb})
+r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Send to Alice: &#34;</span>)
+r<span style="color:#f92672">.</span>sendline(P)
+
+shared_secret <span style="color:#f92672">=</span> nonceb <span style="color:#f92672">^</span> noncea
+key <span style="color:#f92672">=</span> hashlib<span style="color:#f92672">.</span>sha1(long_to_bytes(shared_secret))<span style="color:#f92672">.</span>digest()[:<span style="color:#ae81ff">16</span>]
+
+r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;{</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">iv</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">: </span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">&#34;</span>)
+iv <span style="color:#f92672">=</span> bytes<span style="color:#f92672">.</span>fromhex(r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">,&#34;</span>, drop <span style="color:#f92672">=</span> True)<span style="color:#f92672">.</span>decode(<span style="color:#e6db74">&#34;utf-8&#34;</span>))
+r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">encrypted_flag</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">: </span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">&#34;</span>)
+enc <span style="color:#f92672">=</span> bytes<span style="color:#f92672">.</span>fromhex(r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}&#34;</span>, drop <span style="color:#f92672">=</span> True)<span style="color:#f92672">.</span>decode(<span style="color:#e6db74">&#34;utf-8&#34;</span>))
+r<span style="color:#f92672">.</span>close()
+
+cipher <span style="color:#f92672">=</span> AES<span style="color:#f92672">.</span>new(key, AES<span style="color:#f92672">.</span>MODE_CBC, iv)
+flag <span style="color:#f92672">=</span> cipher<span style="color:#f92672">.</span>decrypt(enc)
+<span style="color:#66d9ef">print</span>(flag)
+
+<span style="color:#75715e"># union{https://buttondown.email/cryptography-dispatches/archive/cryptography-dispatches-the-most-backdoor-looking/}</span>
+</code></pre></div><h3 id="mordell-primes">Mordell primes</h3>
+<h4 id="analysis-1">Analysis</h4>
+<p>This challenge use an <code>EllipticCurve</code> to generate primes and use RSA to encrypt the flag:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> Crypto.Util.number <span style="color:#f92672">import</span> bytes_to_long
+<span style="color:#f92672">from</span> secrets <span style="color:#f92672">import</span> k, FLAG
+
+<span style="color:#66d9ef">assert</span> k <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">^</span><span style="color:#ae81ff">128</span>
+<span style="color:#66d9ef">assert</span> FLAG<span style="color:#f92672">.</span>startswith(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;union{&#39;</span>)
+
+E <span style="color:#f92672">=</span> EllipticCurve(QQ,[<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">78</span>,<span style="color:#f92672">-</span><span style="color:#ae81ff">16</span>])
+P <span style="color:#f92672">=</span> E(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">8</span>)
+Q <span style="color:#f92672">=</span> k<span style="color:#f92672">*</span>P
+R <span style="color:#f92672">=</span> (k<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">*</span>P
+
+p <span style="color:#f92672">=</span> Q[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>numerator()
+q <span style="color:#f92672">=</span> R[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>numerator()
+
+<span style="color:#66d9ef">assert</span> is_prime(p)
+<span style="color:#66d9ef">assert</span> is_prime(q)
+
+e <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x10001</span>
+N <span style="color:#f92672">=</span> p<span style="color:#f92672">*</span>q
+m <span style="color:#f92672">=</span> bytes_to_long(FLAG)
+c <span style="color:#f92672">=</span> pow(m,e,N)
+
+<span style="color:#66d9ef">print</span>(f<span style="color:#e6db74">&#39;N = {N}&#39;</span>)
+<span style="color:#66d9ef">print</span>(f<span style="color:#e6db74">&#39;c = {c}&#39;</span>)
+</code></pre></div><p>If we traverse the value of k, we can find that the bit numbers of p and q are growing up. So we can use this way to find the right primes and decrypt the flag.</p>
+<h4 id="exp-1">Exp</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> Crypto.Util.number <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+N <span style="color:#f92672">=</span> <span style="color:#ae81ff">5766655232619116707100300967885753418146107012385091223647868658490220759057780928028480463319202968587922648810849492353260432268633862603886585796452077987022107158189728686203729104591090970460014498552122526631361162547166873599979607915485144034921458475288775124782641916030643521973787176170306963637370313115151225986951445919112900996709332382715307195702225692083801566649385695837056673372362114813257496330084467265988611009917735012603399494099393876040942830547181089862217042482330353171767145579181573964386356108368535032006591008562456350857902266767781457374500922664326761246791942069022937125224604306624131848290329098431374262949684569694816299414596732546870156381228669433939793464357484350276549975208686778594644420026103742256946843249910774816227113354923539933217563489950555104589202554713352263020111530716888917819520339737690357308261622980951534684991840202859984869712892892239141756252277430937886738881996771080147445410272938947061294178392301438819956947795539940433827913212756666332943009775475701914578705703916156436662432161</span>
+c <span style="color:#f92672">=</span> <span style="color:#ae81ff">5724500982804393999552325992634045287952804319750892943470915970483096772331551016916840383945269998524761532882411398692955440900351993530895920241101091918876067020996223165561345416503911263094097500885104850313790954974285883830265883951377056590933470243828132977718861754767642606894660459919704238136774273318467087409260763141245595380917501542229644505850343679013926414725687233193424516852921591707704514884213118566638296775961963799700542015369513133068927399421907223126861526282761409972982821215039263330243890963476417099153704260378890644297771730781222451447236238246395881031433918137098089530325766260576207689592620432966551477624532170121304029721231233790374192012764855164589022421648544518425385200094885713570919714631967210149469074074462611116405014013224660911261571843297746613484477218466538991573759885491965661063156805466483257274481271612649728798486179280969505996944359268315985465229137237546375405105660181489587704128670445623442389570543693177429900841406620324743316472579871371203563098020011949005568574852024281173097996529</span>
+e <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x10001</span>
+<span style="color:#66d9ef">for</span> k <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">30</span>):
+    E <span style="color:#f92672">=</span> EllipticCurve(QQ,[<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">78</span>,<span style="color:#f92672">-</span><span style="color:#ae81ff">16</span>])
+    P <span style="color:#f92672">=</span> E(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">8</span>)
+    Q <span style="color:#f92672">=</span> k<span style="color:#f92672">*</span>P
+    R <span style="color:#f92672">=</span> (k<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>)<span style="color:#f92672">*</span>P
+    p <span style="color:#f92672">=</span> Q[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>numerator()
+    q <span style="color:#f92672">=</span> R[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>numerator()
+    <span style="color:#66d9ef">if</span> p <span style="color:#f92672">*</span> q <span style="color:#f92672">==</span> N:
+        phi <span style="color:#f92672">=</span> (p <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">*</span> (q <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)
+        d <span style="color:#f92672">=</span> inverse_mod(e,phi)
+        m <span style="color:#f92672">=</span> pow(c,d,N)
+        flag <span style="color:#f92672">=</span> long_to_bytes(m)
+        <span style="color:#66d9ef">print</span>(flag)
+
+<span style="color:#75715e"># union{s34rch1ng_thr0ugh_r4tion4l_p01nts}</span>
+</code></pre></div><h3 id="cr0wn-st3rling">Cr0wn St3rling</h3>
+<h4 id="analysis-2">Analysis</h4>
+<p>This challenge is as follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python3</span>
+<span style="color:#f92672">from</span> secrets <span style="color:#f92672">import</span> flag, musical_key
+<span style="color:#f92672">from</span> Crypto.Util.number <span style="color:#f92672">import</span> isPrime
+<span style="color:#f92672">import</span> math
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">sieve_for_primes_to</span>(n):
+    <span style="color:#75715e"># Copyright Eratosthenes, 204 BC</span>
+    size <span style="color:#f92672">=</span> n<span style="color:#f92672">//</span><span style="color:#ae81ff">2</span>
+    sieve <span style="color:#f92672">=</span> [<span style="color:#ae81ff">1</span>]<span style="color:#f92672">*</span>size
+    limit <span style="color:#f92672">=</span> int(n<span style="color:#f92672">**</span><span style="color:#ae81ff">0.5</span>)
+    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>, limit):
+        <span style="color:#66d9ef">if</span> sieve[i]:
+            val <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">*</span>i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>
+            tmp <span style="color:#f92672">=</span> ((size<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">-</span> i)<span style="color:#f92672">//</span>val
+            sieve[i<span style="color:#f92672">+</span>val::val] <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>]<span style="color:#f92672">*</span>tmp
+    <span style="color:#66d9ef">return</span> [<span style="color:#ae81ff">2</span>] <span style="color:#f92672">+</span> [i<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span> <span style="color:#66d9ef">for</span> i, v <span style="color:#f92672">in</span> enumerate(sieve) <span style="color:#66d9ef">if</span> v <span style="color:#f92672">and</span> i <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>]
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">is_quasi_prime</span>(n, primes):
+    <span style="color:#75715e"># novel class of semi-prime numbers</span>
+    <span style="color:#75715e"># https://arxiv.org/pdf/1903.08570.pdf</span>
+    p2 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+    <span style="color:#66d9ef">for</span> p1 <span style="color:#f92672">in</span> primes:
+        <span style="color:#66d9ef">if</span> n <span style="color:#f92672">%</span> p1 <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+            p2 <span style="color:#f92672">=</span> n<span style="color:#f92672">//</span>p1
+            <span style="color:#66d9ef">break</span>
+    <span style="color:#66d9ef">if</span> isPrime(p2) <span style="color:#f92672">and</span> <span style="color:#f92672">not</span> p1 <span style="color:#f92672">in</span> [<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">3</span>] <span style="color:#f92672">and</span> <span style="color:#f92672">not</span> p2 <span style="color:#f92672">in</span> [<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">3</span>]:
+        <span style="color:#66d9ef">return</span> True
+    <span style="color:#66d9ef">return</span> False
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">bbp_pi</span>(n):
+    <span style="color:#75715e"># Bailey-Borwein-Plouffe Formula</span>
+    <span style="color:#75715e"># sounds almost as cool as Blum-Blum-Shub</span>
+    <span style="color:#75715e"># nth hex digit of pi</span>
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">S</span>(j, n):
+        s <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>
+        k <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+        <span style="color:#66d9ef">while</span> k <span style="color:#f92672">&lt;=</span> n:
+            r <span style="color:#f92672">=</span> <span style="color:#ae81ff">8</span><span style="color:#f92672">*</span>k<span style="color:#f92672">+</span>j
+            s <span style="color:#f92672">=</span> (s <span style="color:#f92672">+</span> pow(<span style="color:#ae81ff">16</span>, n<span style="color:#f92672">-</span>k, r) <span style="color:#f92672">/</span> r) <span style="color:#f92672">%</span> <span style="color:#ae81ff">1.0</span>
+            k <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+        t <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>
+        k <span style="color:#f92672">=</span> n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
+        <span style="color:#66d9ef">while</span> <span style="color:#ae81ff">1</span>:
+            newt <span style="color:#f92672">=</span> t <span style="color:#f92672">+</span> pow(<span style="color:#ae81ff">16</span>, n<span style="color:#f92672">-</span>k) <span style="color:#f92672">/</span> (<span style="color:#ae81ff">8</span><span style="color:#f92672">*</span>k<span style="color:#f92672">+</span>j)
+            <span style="color:#66d9ef">if</span> t <span style="color:#f92672">==</span> newt:
+                <span style="color:#66d9ef">break</span>
+            <span style="color:#66d9ef">else</span>:
+                t <span style="color:#f92672">=</span> newt
+            k <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+        <span style="color:#66d9ef">return</span> s <span style="color:#f92672">+</span> t
+
+    n <span style="color:#f92672">-=</span> <span style="color:#ae81ff">1</span>
+    x <span style="color:#f92672">=</span> (<span style="color:#ae81ff">4</span><span style="color:#f92672">*</span>S(<span style="color:#ae81ff">1</span>, n) <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">*</span>S(<span style="color:#ae81ff">4</span>, n) <span style="color:#f92672">-</span> S(<span style="color:#ae81ff">5</span>, n) <span style="color:#f92672">-</span> S(<span style="color:#ae81ff">6</span>, n)) <span style="color:#f92672">%</span> <span style="color:#ae81ff">1.0</span>
+    <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%02x</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> int(x <span style="color:#f92672">*</span> <span style="color:#ae81ff">16</span><span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">digital_root</span>(n):
+    <span style="color:#75715e"># reveals Icositetragon modalities when applied to Fibonacci sequence</span>
+    <span style="color:#66d9ef">return</span> (n <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">%</span> <span style="color:#ae81ff">9</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> <span style="color:#66d9ef">if</span> n <span style="color:#66d9ef">else</span> <span style="color:#ae81ff">0</span>
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fibonacci</span>(n):
+    <span style="color:#75715e"># Nature&#39;s divine proportion gives high-speed oscillations of infinite</span>
+    <span style="color:#75715e"># wave values of irrational numbers</span>
+    <span style="color:#66d9ef">assert</span>(n <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>)
+    <span style="color:#66d9ef">if</span> n <span style="color:#f92672">&lt;</span> digital_root(<span style="color:#ae81ff">2</span>):
+        <span style="color:#66d9ef">return</span> n
+    <span style="color:#66d9ef">else</span>:
+        <span style="color:#66d9ef">return</span> fibonacci(n <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> fibonacci(n <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>)
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">is_valid_music</span>(music):
+    <span style="color:#75715e"># Leverage music&#39;s infinite variability</span>
+    <span style="color:#66d9ef">assert</span>(all(c <span style="color:#f92672">in</span> <span style="color:#e6db74">&#34;ABCDEFG&#34;</span> <span style="color:#66d9ef">for</span> c <span style="color:#f92672">in</span> music))
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">is_valid_number</span>(D):
+    <span style="color:#75715e"># Checks if input symbolizes the digital root of oxygen</span>
+    <span style="color:#66d9ef">assert</span>(<span style="color:#ae81ff">8</span><span style="color:#f92672">==</span>D)
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_key</span>(motif):
+    is_valid_music(motif)
+    is_valid_number(len(motif))
+    <span style="color:#75715e"># transpose music onto transcendental frequencies</span>
+    indexes <span style="color:#f92672">=</span> [(ord(c)<span style="color:#f92672">-</span><span style="color:#ae81ff">0x40</span>)<span style="color:#f92672">**</span>i <span style="color:#66d9ef">for</span> i, c <span style="color:#f92672">in</span> enumerate(motif)]
+    size <span style="color:#f92672">=</span> sum(indexes)
+    <span style="color:#66d9ef">assert</span>(size <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">75000</span>) <span style="color:#75715e"># we will go larger when we have quantum</span>
+    <span style="color:#66d9ef">return</span> indexes, size
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_q_grid</span>(size):
+    <span style="color:#66d9ef">return</span> [i <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(size) <span style="color:#66d9ef">if</span> is_quasi_prime(i, sieve_for_primes_to(math<span style="color:#f92672">.</span>floor(math<span style="color:#f92672">.</span>sqrt(size))<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>))]
+
+
+<span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
+    <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Oscillating the key&#34;</span>)
+    key_indexes, size <span style="color:#f92672">=</span> get_key(musical_key)
+    <span style="color:#66d9ef">print</span>(<span style="color:#e6db74">&#34;[+] Generating quasi-prime grid&#34;</span>)
+    q_grid <span style="color:#f92672">=</span> get_q_grid(size)
+    <span style="color:#75715e"># print(f&#34;indexes: {key_indexes}  size: {size}  len(q_grid): {len(q_grid)}&#34;)</span>
+
+    out <span style="color:#f92672">=</span> []
+    <span style="color:#66d9ef">for</span> i, p <span style="color:#f92672">in</span> enumerate(flag):
+        <span style="color:#66d9ef">print</span>(f<span style="color:#e6db74">&#34;[+] Entangling key and plaintext at position {i}&#34;</span>)
+        index <span style="color:#f92672">=</span> key_indexes[i <span style="color:#f92672">%</span> len(key_indexes)] <span style="color:#f92672">*</span> fibonacci(i)
+        q <span style="color:#f92672">=</span> q_grid[index <span style="color:#f92672">%</span> len(q_grid)]
+        key_byte_hex <span style="color:#f92672">=</span> bbp_pi(q)
+        <span style="color:#75715e"># print(f&#34;index: {index:10}  fib: {fibonacci(i):10}  q-prime: {q:10}  keybyte: {key_byte_hex:10}&#34;)</span>
+        out<span style="color:#f92672">.</span>append(ord(p) <span style="color:#f92672">^</span> int(key_byte_hex, <span style="color:#ae81ff">16</span>))
+
+    <span style="color:#66d9ef">print</span>(f<span style="color:#e6db74">&#34;[+] Encrypted: {bytes(out).hex()}&#34;</span>)
+</code></pre></div><p>We can know that the <code>musical_key</code> consists of these letters:</p>
+<pre><code>&quot;ABCDEFG&quot;
+</code></pre><p>And its length is 8.</p>
+<p>We know the flag head is <code>union{</code>, so we can use this information to get the <code>2rd-6nd</code> letters of <code>musical_key</code>, and brute the remaining characters to get flag.</p>
+<h4 id="exp-2">Exp</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python3</span>
+<span style="color:#f92672">from</span> Crypto.Util.number <span style="color:#f92672">import</span> isPrime
+<span style="color:#f92672">import</span> math<span style="color:#f92672">,</span> itertools
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">sieve_for_primes_to</span>(n):
+    <span style="color:#75715e"># Copyright Eratosthenes, 204 BC</span>
+    size <span style="color:#f92672">=</span> n<span style="color:#f92672">//</span><span style="color:#ae81ff">2</span>
+    sieve <span style="color:#f92672">=</span> [<span style="color:#ae81ff">1</span>]<span style="color:#f92672">*</span>size
+    limit <span style="color:#f92672">=</span> int(n<span style="color:#f92672">**</span><span style="color:#ae81ff">0.5</span>)
+    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>, limit):
+        <span style="color:#66d9ef">if</span> sieve[i]:
+            val <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">*</span>i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>
+            tmp <span style="color:#f92672">=</span> ((size<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">-</span> i)<span style="color:#f92672">//</span>val
+            sieve[i<span style="color:#f92672">+</span>val::val] <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>]<span style="color:#f92672">*</span>tmp
+    <span style="color:#66d9ef">return</span> [<span style="color:#ae81ff">2</span>] <span style="color:#f92672">+</span> [i<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span> <span style="color:#66d9ef">for</span> i, v <span style="color:#f92672">in</span> enumerate(sieve) <span style="color:#66d9ef">if</span> v <span style="color:#f92672">and</span> i <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>]
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">is_quasi_prime</span>(n, primes):
+    <span style="color:#75715e"># novel class of semi-prime numbers</span>
+    <span style="color:#75715e"># https://arxiv.org/pdf/1903.08570.pdf</span>
+    p2 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+    <span style="color:#66d9ef">for</span> p1 <span style="color:#f92672">in</span> primes:
+        <span style="color:#66d9ef">if</span> n <span style="color:#f92672">%</span> p1 <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+            p2 <span style="color:#f92672">=</span> n<span style="color:#f92672">//</span>p1
+            <span style="color:#66d9ef">break</span>
+    <span style="color:#66d9ef">if</span> isPrime(p2) <span style="color:#f92672">and</span> <span style="color:#f92672">not</span> p1 <span style="color:#f92672">in</span> [<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">3</span>] <span style="color:#f92672">and</span> <span style="color:#f92672">not</span> p2 <span style="color:#f92672">in</span> [<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">3</span>]:
+        <span style="color:#66d9ef">return</span> True
+    <span style="color:#66d9ef">return</span> False
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">bbp_pi</span>(n):
+    <span style="color:#75715e"># Bailey-Borwein-Plouffe Formula</span>
+    <span style="color:#75715e"># sounds almost as cool as Blum-Blum-Shub</span>
+    <span style="color:#75715e"># nth hex digit of pi</span>
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">S</span>(j, n):
+        s <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>
+        k <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+        <span style="color:#66d9ef">while</span> k <span style="color:#f92672">&lt;=</span> n:
+            r <span style="color:#f92672">=</span> <span style="color:#ae81ff">8</span><span style="color:#f92672">*</span>k<span style="color:#f92672">+</span>j
+            s <span style="color:#f92672">=</span> (s <span style="color:#f92672">+</span> pow(<span style="color:#ae81ff">16</span>, n<span style="color:#f92672">-</span>k, r) <span style="color:#f92672">/</span> r) <span style="color:#f92672">%</span> <span style="color:#ae81ff">1.0</span>
+            k <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+        t <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>
+        k <span style="color:#f92672">=</span> n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
+        <span style="color:#66d9ef">while</span> <span style="color:#ae81ff">1</span>:
+            newt <span style="color:#f92672">=</span> t <span style="color:#f92672">+</span> pow(<span style="color:#ae81ff">16</span>, n<span style="color:#f92672">-</span>k) <span style="color:#f92672">/</span> (<span style="color:#ae81ff">8</span><span style="color:#f92672">*</span>k<span style="color:#f92672">+</span>j)
+            <span style="color:#66d9ef">if</span> t <span style="color:#f92672">==</span> newt:
+                <span style="color:#66d9ef">break</span>
+            <span style="color:#66d9ef">else</span>:
+                t <span style="color:#f92672">=</span> newt
+            k <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+        <span style="color:#66d9ef">return</span> s <span style="color:#f92672">+</span> t
+
+    n <span style="color:#f92672">-=</span> <span style="color:#ae81ff">1</span>
+    x <span style="color:#f92672">=</span> (<span style="color:#ae81ff">4</span><span style="color:#f92672">*</span>S(<span style="color:#ae81ff">1</span>, n) <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">*</span>S(<span style="color:#ae81ff">4</span>, n) <span style="color:#f92672">-</span> S(<span style="color:#ae81ff">5</span>, n) <span style="color:#f92672">-</span> S(<span style="color:#ae81ff">6</span>, n)) <span style="color:#f92672">%</span> <span style="color:#ae81ff">1.0</span>
+    <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%02x</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> int(x <span style="color:#f92672">*</span> <span style="color:#ae81ff">16</span><span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">digital_root</span>(n):
+    <span style="color:#75715e"># reveals Icositetragon modalities when applied to Fibonacci sequence</span>
+    <span style="color:#66d9ef">return</span> (n <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">%</span> <span style="color:#ae81ff">9</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> <span style="color:#66d9ef">if</span> n <span style="color:#66d9ef">else</span> <span style="color:#ae81ff">0</span>
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fibonacci</span>(n):
+    <span style="color:#75715e"># Nature&#39;s divine proportion gives high-speed oscillations of infinite</span>
+    <span style="color:#75715e"># wave values of irrational numbers</span>
+    <span style="color:#66d9ef">assert</span>(n <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>)
+    <span style="color:#66d9ef">if</span> n <span style="color:#f92672">&lt;</span> digital_root(<span style="color:#ae81ff">2</span>):
+        <span style="color:#66d9ef">return</span> n
+    <span style="color:#66d9ef">else</span>:
+        <span style="color:#66d9ef">return</span> fibonacci(n <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> fibonacci(n <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>)
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">is_valid_music</span>(music):
+    <span style="color:#75715e"># Leverage music&#39;s infinite variability</span>
+    <span style="color:#66d9ef">assert</span>(all(c <span style="color:#f92672">in</span> <span style="color:#e6db74">&#34;ABCDEFG&#34;</span> <span style="color:#66d9ef">for</span> c <span style="color:#f92672">in</span> music))
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">is_valid_number</span>(D):
+    <span style="color:#75715e"># Checks if input symbolizes the digital root of oxygen</span>
+    <span style="color:#66d9ef">assert</span>(<span style="color:#ae81ff">8</span><span style="color:#f92672">==</span>D)
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_key</span>(motif):
+    is_valid_music(motif)
+    is_valid_number(len(motif))
+    <span style="color:#75715e"># transpose music onto transcendental frequencies</span>
+    indexes <span style="color:#f92672">=</span> [(ord(c)<span style="color:#f92672">-</span><span style="color:#ae81ff">0x40</span>)<span style="color:#f92672">**</span>i <span style="color:#66d9ef">for</span> i, c <span style="color:#f92672">in</span> enumerate(motif)]
+    size <span style="color:#f92672">=</span> sum(indexes)
+    <span style="color:#66d9ef">assert</span>(size <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">75000</span>) <span style="color:#75715e"># we will go larger when we have quantum</span>
+    <span style="color:#66d9ef">return</span> indexes, size
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_q_grid</span>(size):
+    <span style="color:#66d9ef">return</span> [i <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(size) <span style="color:#66d9ef">if</span> is_quasi_prime(i, sieve_for_primes_to(math<span style="color:#f92672">.</span>floor(math<span style="color:#f92672">.</span>sqrt(size))<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>))]
+
+output <span style="color:#f92672">=</span> bytes<span style="color:#f92672">.</span>fromhex(<span style="color:#e6db74">&#34;76f64667220717784affa07cf6b8be52c7d8348d778a41615efa9e53f2566b27fd96eb984c08&#34;</span>)
+known_flag <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;union{&#34;</span>
+known_key_byte <span style="color:#f92672">=</span> [a <span style="color:#f92672">^</span> b <span style="color:#66d9ef">for</span> a,b <span style="color:#f92672">in</span> zip(output,known_flag)]
+<span style="color:#66d9ef">print</span>(known_key_byte)
+
+fibonacci_arr <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>]
+q_grid <span style="color:#f92672">=</span> get_q_grid(<span style="color:#ae81ff">75000</span>)
+
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">2</span>,len(output)):
+    fibonacci_arr<span style="color:#f92672">.</span>append(fibonacci_arr[i<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">+</span> fibonacci_arr[i<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>])
+
+musical_key <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;*&#34;</span>] <span style="color:#f92672">*</span> <span style="color:#ae81ff">8</span>
+
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>,len(known_key_byte)):
+    <span style="color:#66d9ef">for</span> j <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">8</span>):
+        index <span style="color:#f92672">=</span> (j <span style="color:#f92672">**</span> i) <span style="color:#f92672">*</span> fibonacci_arr[i]
+        q <span style="color:#f92672">=</span> q_grid[index <span style="color:#f92672">%</span> len(q_grid)]
+        key_byte_hex <span style="color:#f92672">=</span> bbp_pi(q)
+        <span style="color:#66d9ef">if</span> int(key_byte_hex,<span style="color:#ae81ff">16</span>) <span style="color:#f92672">==</span> known_key_byte[i]:
+            musical_key[i] <span style="color:#f92672">=</span> chr(<span style="color:#ae81ff">0x40</span> <span style="color:#f92672">+</span> j)
+
+unkown_key_length <span style="color:#f92672">=</span> musical_key<span style="color:#f92672">.</span>count(<span style="color:#e6db74">&#34;*&#34;</span>)
+dic <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ABCDEFG&#34;</span>
+
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> itertools<span style="color:#f92672">.</span>product(dic,repeat <span style="color:#f92672">=</span> unkown_key_length):
+    <span style="color:#66d9ef">try</span>:
+        brute_key <span style="color:#f92672">=</span> [i <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> musical_key]
+        <span style="color:#66d9ef">for</span> j <span style="color:#f92672">in</span> range(unkown_key_length):
+            idx <span style="color:#f92672">=</span> brute_key<span style="color:#f92672">.</span>index(<span style="color:#e6db74">&#34;*&#34;</span>)
+            brute_key[idx] <span style="color:#f92672">=</span> i[j]
+        key_indexes, size <span style="color:#f92672">=</span> get_key(brute_key)
+        q_grid <span style="color:#f92672">=</span> get_q_grid(size)
+        flag <span style="color:#f92672">=</span> []
+        <span style="color:#66d9ef">for</span> i, p <span style="color:#f92672">in</span> enumerate(output):
+            index <span style="color:#f92672">=</span> key_indexes[i <span style="color:#f92672">%</span> len(key_indexes)] <span style="color:#f92672">*</span> fibonacci_arr[i]
+            q <span style="color:#f92672">=</span> q_grid[index <span style="color:#f92672">%</span> len(q_grid)]
+            key_byte_hex <span style="color:#f92672">=</span> bbp_pi(q)
+            flag<span style="color:#f92672">.</span>append(p <span style="color:#f92672">^</span> int(key_byte_hex, <span style="color:#ae81ff">16</span>))
+        <span style="color:#66d9ef">print</span>(bytes(flag))
+    <span style="color:#66d9ef">except</span>:
+        <span style="color:#66d9ef">pass</span>
+
+<span style="color:#75715e"># union{b45ed_oN_iRR3fut4bL3_m4th3m4G1c}</span>
+</code></pre></div><h3 id="neo-classical-key-exchange">Neo-Classical Key Exchange</h3>
+<h4 id="analysis-3">Analysis</h4>
+<p>This is a <code>Diffie-Hellman key exchange</code> challenge with matrices over Fp:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> os
+<span style="color:#f92672">from</span> hashlib <span style="color:#f92672">import</span> sha1
+<span style="color:#f92672">from</span> random <span style="color:#f92672">import</span> randint
+<span style="color:#f92672">from</span> Crypto.Cipher <span style="color:#f92672">import</span> AES
+<span style="color:#f92672">from</span> Crypto.Util.Padding <span style="color:#f92672">import</span> pad, unpad
+
+FLAG <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;union{XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX}&#34;</span>
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">list_valid</span>(l):
+    x <span style="color:#f92672">=</span> l <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+    checked <span style="color:#f92672">=</span> set([x])
+    <span style="color:#66d9ef">while</span> x <span style="color:#f92672">*</span> x <span style="color:#f92672">!=</span> l:
+        x <span style="color:#f92672">=</span> (x <span style="color:#f92672">+</span> (l <span style="color:#f92672">//</span> x)) <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+        <span style="color:#66d9ef">if</span> x <span style="color:#f92672">in</span> checked: <span style="color:#66d9ef">return</span> False
+        checked<span style="color:#f92672">.</span>add(x)
+    <span style="color:#66d9ef">return</span> True
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">list_iter</span>(n):
+    x <span style="color:#f92672">=</span> n
+    y <span style="color:#f92672">=</span> (x <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+    <span style="color:#66d9ef">while</span> y <span style="color:#f92672">&lt;</span> x:
+        x <span style="color:#f92672">=</span> y
+        y <span style="color:#f92672">=</span> (x <span style="color:#f92672">+</span> n <span style="color:#f92672">//</span> x) <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+    <span style="color:#66d9ef">return</span> x
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">list_mul</span>(l1,l2,p):
+    X, Y <span style="color:#f92672">=</span> len(l1), len(l2)
+    Z <span style="color:#f92672">=</span> list_iter(X)
+    <span style="color:#66d9ef">assert</span> X <span style="color:#f92672">==</span> Y
+    <span style="color:#66d9ef">assert</span> list_valid(X)
+    l3 <span style="color:#f92672">=</span> []
+    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(Z):
+        <span style="color:#66d9ef">for</span> j <span style="color:#f92672">in</span> range(Z):
+            prod_list <span style="color:#f92672">=</span> [x<span style="color:#f92672">*</span>y <span style="color:#66d9ef">for</span> x,y <span style="color:#f92672">in</span> zip(l1[Z<span style="color:#f92672">*</span>i:Z<span style="color:#f92672">*</span>(i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>)], l2[j::Z])]
+            sum_list <span style="color:#f92672">=</span> sum(prod_list) <span style="color:#f92672">%</span> p
+            l3<span style="color:#f92672">.</span>append(sum_list)
+    <span style="color:#66d9ef">return</span> l3
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">list_exp</span>(l0, e, p):
+    exp <span style="color:#f92672">=</span> bin(e)[<span style="color:#ae81ff">3</span>::]
+    l <span style="color:#f92672">=</span> l0
+    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> exp:
+        l <span style="color:#f92672">=</span> list_mul(l,l,p)
+        <span style="color:#66d9ef">if</span> i <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;1&#39;</span>:
+            l <span style="color:#f92672">=</span> list_mul(l,l0,p)
+    <span style="color:#66d9ef">return</span> l
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">gen_public_key</span>(G,p):
+    k <span style="color:#f92672">=</span> randint(<span style="color:#ae81ff">2</span>,p<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+    B <span style="color:#f92672">=</span> list_exp(G,k,p)
+    <span style="color:#66d9ef">return</span> B,k
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">gen_shared_secret</span>(M,k,p):
+    S <span style="color:#f92672">=</span> list_exp(M,k,p)
+    <span style="color:#66d9ef">return</span> S[<span style="color:#ae81ff">0</span>]
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">encrypt_flag</span>(shared_secret: int):
+    <span style="color:#75715e"># Derive AES key from shared secret</span>
+    key <span style="color:#f92672">=</span> sha1(str(shared_secret)<span style="color:#f92672">.</span>encode(<span style="color:#e6db74">&#39;ascii&#39;</span>))<span style="color:#f92672">.</span>digest()[:<span style="color:#ae81ff">16</span>]
+    <span style="color:#75715e"># Encrypt flag</span>
+    iv <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>urandom(<span style="color:#ae81ff">16</span>)
+    cipher <span style="color:#f92672">=</span> AES<span style="color:#f92672">.</span>new(key, AES<span style="color:#f92672">.</span>MODE_CBC, iv)
+    ciphertext <span style="color:#f92672">=</span> cipher<span style="color:#f92672">.</span>encrypt(pad(FLAG, <span style="color:#ae81ff">16</span>))
+    <span style="color:#75715e"># Prepare data to send</span>
+    data <span style="color:#f92672">=</span> {}
+    data[<span style="color:#e6db74">&#39;iv&#39;</span>] <span style="color:#f92672">=</span> iv<span style="color:#f92672">.</span>hex()
+    data[<span style="color:#e6db74">&#39;encrypted_flag&#39;</span>] <span style="color:#f92672">=</span> ciphertext<span style="color:#f92672">.</span>hex()
+    <span style="color:#66d9ef">return</span> data
+
+p <span style="color:#f92672">=</span> <span style="color:#ae81ff">64050696188665199345192377656931194086566536936726816377438460361325379667067</span>
+G <span style="color:#f92672">=</span> [<span style="color:#ae81ff">37474442957545178764106324981526765864975539603703225974060597893616967420393</span>,<span style="color:#ae81ff">59548952493843765553320545295586414418025029050337357927081996502641013504519</span>, <span style="color:#ae81ff">31100206652551216470993800087401304955064478829626836705672452903908942403749</span>, <span style="color:#ae81ff">13860314824542875724070123811379531915581644656235299920466618156218632047734</span>, <span style="color:#ae81ff">20708638990322428536520731257757756431087939910637434308755686013682215836263</span>, <span style="color:#ae81ff">24952549146521449536973107355293130621158296115716203042289903292398131137622</span>, <span style="color:#ae81ff">10218366819256412940642638446599581386178890340698004603581416301746386415327</span>, <span style="color:#ae81ff">2703573504536926632262901165642757957865606616503182053867895322013282739647</span>, <span style="color:#ae81ff">15879294441389987904495146729489455626323759671332021432053969162532650514737</span>, <span style="color:#ae81ff">30587605323370564700860148975988622662724284710157566957213620913591119857266</span>, <span style="color:#ae81ff">36611042243620159284891739300872570923754844379301712429812256285632664939438</span>, <span style="color:#ae81ff">58718914241625123259194313738101735115927103160409788235233580788592491022607</span>, <span style="color:#ae81ff">18794394402264910240234942692440221176187631522440611503354694959423849000390</span>, <span style="color:#ae81ff">37895552711677819212080891019935360298287165077162751096430149138287175198792</span>, <span style="color:#ae81ff">42606523043195439411148917099933299291240308126833074779715029926129592539269</span>, <span style="color:#ae81ff">58823705349101783144068766123926443603026261539055007453105405205925131925190</span>, <span style="color:#ae81ff">5161282521824450434107880210047438744043346780853067016037814677431009278694</span>, <span style="color:#ae81ff">3196376473514329905892186470188661558538142801087733055324234265182313048345</span>, <span style="color:#ae81ff">37727162280974181457962922331112777744780166735208107725039910555667476286294</span>, <span style="color:#ae81ff">43375207256050745127045919163601367018956550763591458462169205918826786898398</span>, <span style="color:#ae81ff">21316240287865348172884609677159994196623096993962103476517743037154705924312</span>, <span style="color:#ae81ff">7032356850437797415676110660436413346535063433156355547532408592015995190002</span>, <span style="color:#ae81ff">3916163687745653495848908537554668396996224820204992858702838114767399600995</span>, <span style="color:#ae81ff">13665661150287720594400034444826365313288645670526357669076978338398633256587</span>,<span style="color:#ae81ff">23887025917289715287437926862183042001010845671403682948840305587666551788353</span>]
+A,a <span style="color:#f92672">=</span> gen_public_key(G,p)
+B,b <span style="color:#f92672">=</span> gen_public_key(G,p)
+<span style="color:#66d9ef">assert</span> gen_shared_secret(A,b,p) <span style="color:#f92672">==</span> gen_shared_secret(B,a,p)
+
+shared_secret <span style="color:#f92672">=</span> gen_shared_secret(B,a,p)
+encrypted_flag <span style="color:#f92672">=</span> encrypt_flag(shared_secret)
+
+<span style="color:#66d9ef">print</span>(f<span style="color:#e6db74">&#34;Alice&#39;s public key: {A}&#34;</span>) 
+<span style="color:#66d9ef">print</span>(f<span style="color:#e6db74">&#34;Bob&#39;s public key: {B}&#34;</span>)
+<span style="color:#66d9ef">print</span>(f<span style="color:#e6db74">&#34;Encrypted flag: {encrypted_flag}&#34;</span>)
+</code></pre></div><p>This is a <a href="https://en.wikipedia.org/wiki/Discrete_logarithm">Discrete Logarithm Problem</a> with matrices.</p>
+<p>Consider following things:</p>
+<p>The <a href="https://en.wikipedia.org/wiki/Jordan_normal_form">Jordan Canonical Form</a> of <code>G</code> is as follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#f92672">[</span> 935653797092383|               0|               0|               <span style="color:#ae81ff">0</span>                0<span style="color:#f92672">]</span>
+<span style="color:#f92672">[</span>----------------+----------------+----------------+---------------------------------<span style="color:#f92672">]</span>
+<span style="color:#f92672">[</span>               0| 895583106357469|               0|               <span style="color:#ae81ff">0</span>                0<span style="color:#f92672">]</span>
+<span style="color:#f92672">[</span>----------------+----------------+----------------+---------------------------------<span style="color:#f92672">]</span>
+<span style="color:#f92672">[</span>               0|               0| 741118640597053|               <span style="color:#ae81ff">0</span>                0<span style="color:#f92672">]</span>
+<span style="color:#f92672">[</span>----------------+----------------+----------------+---------------------------------<span style="color:#f92672">]</span>
+<span style="color:#f92672">[</span>               0|               0|               0|<span style="color:#ae81ff">1001557463764859</span>                1<span style="color:#f92672">]</span>
+<span style="color:#f92672">[</span>               0|               0|               0|               <span style="color:#ae81ff">0</span> 1001557463764859<span style="color:#f92672">]</span>
+</code></pre></div><p>And we can find that:</p>
+<p>$$
+G^a = A \\<br>
+G = PJP^{-1} \\<br>
+J^a = P^{-1}AP
+$$</p>
+<p>We focus on the sub-matrix in the lower right corner of $G$(assume as $S$), its form is as follows:
+$$
+S =
+\left[
+\begin{matrix}
+\lambda &amp; 1  \\<br>
+0 &amp; \lambda  \\<br>
+\end{matrix}
+\right]
+$$</p>
+<p>Then:
+$$
+S^a =
+\left[
+\begin{matrix}
+\lambda^a &amp; a\lambda^{a-1}  \\<br>
+0 &amp; \lambda^a  \\<br>
+\end{matrix}
+\right]
+$$</p>
+<p>And we can get <code>a</code> as:</p>
+<p>$$
+a = (a\lambda^{a-1} \times \lambda) / \lambda^a
+$$
+Finally we can solve this <code>dlp</code> problem.</p>
+<h4 id="exp-3">Exp</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> hashlib <span style="color:#f92672">import</span> sha1
+<span style="color:#f92672">from</span> Crypto.Cipher <span style="color:#f92672">import</span> AES
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">list_valid</span>(l):
+    x <span style="color:#f92672">=</span> l <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+    checked <span style="color:#f92672">=</span> set([x])
+    <span style="color:#66d9ef">while</span> x <span style="color:#f92672">*</span> x <span style="color:#f92672">!=</span> l:
+        x <span style="color:#f92672">=</span> (x <span style="color:#f92672">+</span> (l <span style="color:#f92672">//</span> x)) <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+        <span style="color:#66d9ef">if</span> x <span style="color:#f92672">in</span> checked: <span style="color:#66d9ef">return</span> False
+        checked<span style="color:#f92672">.</span>add(x)
+    <span style="color:#66d9ef">return</span> True
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">list_iter</span>(n):
+    x <span style="color:#f92672">=</span> n
+    y <span style="color:#f92672">=</span> (x <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+    <span style="color:#66d9ef">while</span> y <span style="color:#f92672">&lt;</span> x:
+        x <span style="color:#f92672">=</span> y
+        y <span style="color:#f92672">=</span> (x <span style="color:#f92672">+</span> n <span style="color:#f92672">//</span> x) <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+    <span style="color:#66d9ef">return</span> x
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">list_mul</span>(l1,l2,p):
+    X, Y <span style="color:#f92672">=</span> len(l1), len(l2)
+    Z <span style="color:#f92672">=</span> list_iter(X)
+    <span style="color:#66d9ef">assert</span> X <span style="color:#f92672">==</span> Y
+    <span style="color:#66d9ef">assert</span> list_valid(X)
+    l3 <span style="color:#f92672">=</span> []
+    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(Z):
+        <span style="color:#66d9ef">for</span> j <span style="color:#f92672">in</span> range(Z):
+            prod_list <span style="color:#f92672">=</span> [x<span style="color:#f92672">*</span>y <span style="color:#66d9ef">for</span> x,y <span style="color:#f92672">in</span> zip(l1[Z<span style="color:#f92672">*</span>i:Z<span style="color:#f92672">*</span>(i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>)], l2[j::Z])]
+            sum_list <span style="color:#f92672">=</span> sum(prod_list) <span style="color:#f92672">%</span> p
+            l3<span style="color:#f92672">.</span>append(sum_list)
+    <span style="color:#66d9ef">return</span> l3
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">list_exp</span>(l0, e, p):
+    exp <span style="color:#f92672">=</span> bin(e)[<span style="color:#ae81ff">3</span>::]
+    l <span style="color:#f92672">=</span> l0
+    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> exp:
+        l <span style="color:#f92672">=</span> list_mul(l,l,p)
+        <span style="color:#66d9ef">if</span> i <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;1&#39;</span>:
+            l <span style="color:#f92672">=</span> list_mul(l,l0,p)
+    <span style="color:#66d9ef">return</span> l
+
+p <span style="color:#f92672">=</span> <span style="color:#ae81ff">64050696188665199345192377656931194086566536936726816377438460361325379667067</span>
+G <span style="color:#f92672">=</span> [<span style="color:#ae81ff">37474442957545178764106324981526765864975539603703225974060597893616967420393</span>,<span style="color:#ae81ff">59548952493843765553320545295586414418025029050337357927081996502641013504519</span>, <span style="color:#ae81ff">31100206652551216470993800087401304955064478829626836705672452903908942403749</span>, <span style="color:#ae81ff">13860314824542875724070123811379531915581644656235299920466618156218632047734</span>, <span style="color:#ae81ff">20708638990322428536520731257757756431087939910637434308755686013682215836263</span>, <span style="color:#ae81ff">24952549146521449536973107355293130621158296115716203042289903292398131137622</span>, <span style="color:#ae81ff">10218366819256412940642638446599581386178890340698004603581416301746386415327</span>, <span style="color:#ae81ff">2703573504536926632262901165642757957865606616503182053867895322013282739647</span>, <span style="color:#ae81ff">15879294441389987904495146729489455626323759671332021432053969162532650514737</span>, <span style="color:#ae81ff">30587605323370564700860148975988622662724284710157566957213620913591119857266</span>, <span style="color:#ae81ff">36611042243620159284891739300872570923754844379301712429812256285632664939438</span>, <span style="color:#ae81ff">58718914241625123259194313738101735115927103160409788235233580788592491022607</span>, <span style="color:#ae81ff">18794394402264910240234942692440221176187631522440611503354694959423849000390</span>, <span style="color:#ae81ff">37895552711677819212080891019935360298287165077162751096430149138287175198792</span>, <span style="color:#ae81ff">42606523043195439411148917099933299291240308126833074779715029926129592539269</span>, <span style="color:#ae81ff">58823705349101783144068766123926443603026261539055007453105405205925131925190</span>, <span style="color:#ae81ff">5161282521824450434107880210047438744043346780853067016037814677431009278694</span>, <span style="color:#ae81ff">3196376473514329905892186470188661558538142801087733055324234265182313048345</span>, <span style="color:#ae81ff">37727162280974181457962922331112777744780166735208107725039910555667476286294</span>, <span style="color:#ae81ff">43375207256050745127045919163601367018956550763591458462169205918826786898398</span>, <span style="color:#ae81ff">21316240287865348172884609677159994196623096993962103476517743037154705924312</span>, <span style="color:#ae81ff">7032356850437797415676110660436413346535063433156355547532408592015995190002</span>, <span style="color:#ae81ff">3916163687745653495848908537554668396996224820204992858702838114767399600995</span>, <span style="color:#ae81ff">13665661150287720594400034444826365313288645670526357669076978338398633256587</span>,<span style="color:#ae81ff">23887025917289715287437926862183042001010845671403682948840305587666551788353</span>]
+A <span style="color:#f92672">=</span> [<span style="color:#ae81ff">28233100393684529817120826374704703970604351085347992179309675559635346595380</span>, <span style="color:#ae81ff">29046194176577252146425228713999025714624645466020308483596362772799464421565</span>, <span style="color:#ae81ff">51414757515365785106884177690982449232859118016584164030996802978303073832864</span>, <span style="color:#ae81ff">32267784952174932165833922809968200325881642530032757218932833269493776228149</span>, <span style="color:#ae81ff">13973793666546842231063337975335309683360495651176415377710477331321414420456</span>, <span style="color:#ae81ff">5286615045753246138573595226543740641269173696296954823357812924414572937107</span>, <span style="color:#ae81ff">43466342875687159863281474559075034075049932698505922755874901032656831073450</span>, <span style="color:#ae81ff">47661605030033906449833071780503259530559725918766113764853049109959949029047</span>, <span style="color:#ae81ff">29762627612115411002000295970517549686591898340299041949451816959553956035443</span>, <span style="color:#ae81ff">49286580271478233284518064235175477517034865850564346192909446300261247213283</span>, <span style="color:#ae81ff">7188366615080791208945602088806130718221011202809096314763875728464565550249</span>, <span style="color:#ae81ff">32182006086354456048519258721570301235369694461013162635052191913678704872393</span>, <span style="color:#ae81ff">21483240138613555020973495536958806124512132313438467660300656866733958284555</span>, <span style="color:#ae81ff">32536424410469390868658830924897162415670475154843962198873348894987606529091</span>, <span style="color:#ae81ff">45625096994113674714302106480828933542072238055815294252728640125290264970846</span>, <span style="color:#ae81ff">24213002979296722993383462232491867853999792671040421022480792914763688570011</span>, <span style="color:#ae81ff">20226375341521636699395168981434607973732973904867124197482261876438894251202</span>, <span style="color:#ae81ff">35665173793762989154951727010732056807487002272231939587142706779138064036737</span>, <span style="color:#ae81ff">44918569326474189030005211458487723881627056771470698141626869348302159144544</span>, <span style="color:#ae81ff">55135331348727541614492445208303357763346452332141430109351274117544563056325</span>, <span style="color:#ae81ff">3933992047445840422521143559241271788171754114229341734112783430664672779696</span>, <span style="color:#ae81ff">21801264227118954504981594527645803342623213184399008070689042493499060756930</span>, <span style="color:#ae81ff">36511317987578612540784999849026900531836613400317039182698008103871338654381</span>, <span style="color:#ae81ff">26496131888936628842836360667203182676230332105839869360126226904814961091203</span>, <span style="color:#ae81ff">30731439605443071877356819320867001660509853590875860716545460172180769908374</span>]
+B <span style="color:#f92672">=</span> [<span style="color:#ae81ff">44377211427173233116979050195003801151862259928694524276865425496276215498972</span>, <span style="color:#ae81ff">49241196843948436830587713696810940169354056619506533754073633670263404255961</span>, <span style="color:#ae81ff">23492045323953392330208784813581654383480854895526105331150055254139460724192</span>, <span style="color:#ae81ff">17080512298466023233312431592445586950706981939186458231843048823545276010215</span>, <span style="color:#ae81ff">39604091535611342500963237243447065555062876641002877504522940232561620619318</span>, <span style="color:#ae81ff">56960961102475075778327243487866255394103198246135548238726100230622806328438</span>, <span style="color:#ae81ff">38217368372409493349493021940482885382608210497803407862232172289864983784622</span>, <span style="color:#ae81ff">42335856751075392349376312407843682476509683741291872419641417363122382815132</span>, <span style="color:#ae81ff">51941219313167868120916202016894056878767165096252120052547694800835266376234</span>, <span style="color:#ae81ff">39291827760740007097926684492849490059616209795648655493766840810548112692299</span>, <span style="color:#ae81ff">43135915013972209275982685899523579484981852752898836057210548592960639003728</span>, <span style="color:#ae81ff">23595516638571580424735519959966735718018613005573597878458733582530644060888</span>, <span style="color:#ae81ff">62827451288017543974020113222032392007291072051169612626408144208347674696867</span>, <span style="color:#ae81ff">5592384352020377877919583422508787142347256068192656512514358468697868033175</span>, <span style="color:#ae81ff">18051963256426258602161226818544125427525613549556239701594042609393802930037</span>, <span style="color:#ae81ff">40958445768744523216077674511494171471872825559820257375045060058213312003099</span>, <span style="color:#ae81ff">58717128055983851157674774153408247177039629801049962370399870689530231499322</span>, <span style="color:#ae81ff">1037221856690142468199057506665941102592008657830329236867815734600280869030</span>, <span style="color:#ae81ff">59376420054790038148696948468280202162475373720884110232519335695030684164414</span>, <span style="color:#ae81ff">4151096619484839840558543718588323193224649180369287745679082104762052554517</span>, <span style="color:#ae81ff">59388992954098787668810593349809442685161783884520951198437714884153766418952</span>, <span style="color:#ae81ff">2963435422634311858110276357146679864581253927895056591004158165102829287371</span>, <span style="color:#ae81ff">41537819812103905985231524610057365971827624339877580912325361702870004864439</span>, <span style="color:#ae81ff">39640428648253591645759865709120529164727198669907353665694566732915196666123</span>, <span style="color:#ae81ff">40517325937253252797947519549738947711994111971749366539987665346423972531224</span>]
+iv <span style="color:#f92672">=</span> bytes<span style="color:#f92672">.</span>fromhex(<span style="color:#e6db74">&#34;f62c1400190702198a26c4f855030f8c&#34;</span>)
+ct <span style="color:#f92672">=</span> bytes<span style="color:#f92672">.</span>fromhex(<span style="color:#e6db74">&#34;9580af623a2427920469c31407f9cec7ccab2389cb3a120869106bf6c6f6fe09810172a1f0f3892c321237ac0e4b7d9a&#34;</span>)
+
+MG <span style="color:#f92672">=</span> Matrix(GF(p),<span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">5</span>,G)
+MA <span style="color:#f92672">=</span> Matrix(GF(p),<span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">5</span>,A)
+MB <span style="color:#f92672">=</span> Matrix(GF(p),<span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">5</span>,B)
+
+J, P <span style="color:#f92672">=</span> MG<span style="color:#f92672">.</span>jordan_form(transformation <span style="color:#f92672">=</span> True)
+MA <span style="color:#f92672">=</span> P<span style="color:#f92672">^-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">*</span> MA <span style="color:#f92672">*</span> P
+MB <span style="color:#f92672">=</span> P<span style="color:#f92672">^-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">*</span> MB <span style="color:#f92672">*</span> P
+
+kA <span style="color:#f92672">=</span> MA[<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">4</span>] <span style="color:#f92672">/</span> MA[<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>] <span style="color:#f92672">*</span> J[<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>]
+kB <span style="color:#f92672">=</span> MB[<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">4</span>] <span style="color:#f92672">/</span> MB[<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>] <span style="color:#f92672">*</span> J[<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>]
+
+shared_secret <span style="color:#f92672">=</span> list_exp(B,kA,p)[<span style="color:#ae81ff">0</span>]
+key <span style="color:#f92672">=</span> sha1(str(shared_secret)<span style="color:#f92672">.</span>encode(<span style="color:#e6db74">&#39;ascii&#39;</span>))<span style="color:#f92672">.</span>digest()[:<span style="color:#ae81ff">16</span>]
+cipher <span style="color:#f92672">=</span> AES<span style="color:#f92672">.</span>new(key, AES<span style="color:#f92672">.</span>MODE_CBC, iv)
+flag <span style="color:#f92672">=</span> cipher<span style="color:#f92672">.</span>decrypt(ct)
+<span style="color:#66d9ef">print</span>(flag)
+
+<span style="color:#75715e"># union{high3r_d1m3n510ns_l0w3r_s3cur1ty}</span>
+</code></pre></div><h3 id="why-is-a-raven">why is a raven..</h3>
+<h4 id="analysis-4">Analysis</h4>
+<p>This is a <a href="https://en.wikipedia.org/wiki/Supersingular_isogeny_key_exchange">Supersingular isogeny Diffie–Hellman</a> challenge:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> hashlib
+<span style="color:#f92672">from</span> base64 <span style="color:#f92672">import</span> b64encode
+<span style="color:#f92672">from</span> Crypto.Cipher <span style="color:#f92672">import</span> AES
+
+p <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">^</span><span style="color:#ae81ff">216</span><span style="color:#f92672">*</span><span style="color:#ae81ff">3</span><span style="color:#f92672">^</span><span style="color:#ae81ff">137</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+F<span style="color:#f92672">.&lt;</span>i<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> GF(p<span style="color:#f92672">^</span><span style="color:#ae81ff">2</span>, modulus<span style="color:#f92672">=</span>x<span style="color:#f92672">^</span><span style="color:#ae81ff">2</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>)
+E <span style="color:#f92672">=</span> EllipticCurve(F, [<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">6</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>])
+
+xQ20<span style="color:#f92672">=</span><span style="color:#ae81ff">0x000C7461738340EFCF09CE388F666EB38F7F3AFD42DC0B664D9F461F31AA2EDC6B4AB71BD42F4D7C058E13F64B237EF7DDD2ABC0DEB0C6C</span>
+xQ21<span style="color:#f92672">=</span><span style="color:#ae81ff">0x00025DE37157F50D75D320DD0682AB4A67E471586FBC2D31AA32E6957FA2B2614C4CD40A1E27283EAAF4272AE517847197432E2D61C85F5</span>
+yQ20<span style="color:#f92672">=</span><span style="color:#ae81ff">0x001D407B70B01E4AEE172EDF491F4EF32144F03F5E054CEF9FDE5A35EFA3642A11817905ED0D4F193F31124264924A5F64EFE14B6EC97E5</span>
+yQ21<span style="color:#f92672">=</span><span style="color:#ae81ff">0x000E7DEC8C32F50A4E735A839DCDB89FE0763A184C525F7B7D0EBC0E84E9D83E9AC53A572A25D19E1464B509D97272AE761657B4765B3D6</span>
+xP20<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0003CCFC5E1F050030363E6920A0F7A4C6C71E63DE63A0E6475AF621995705F7C84500CB2BB61E950E19EAB8661D25C4A50ED279646CB48</span>
+xP21<span style="color:#f92672">=</span><span style="color:#ae81ff">0x001AD1C1CAE7840EDDA6D8A924520F60E573D3B9DFAC6D189941CB22326D284A8816CC4249410FE80D68047D823C97D705246F869E3EA50</span>
+yP20<span style="color:#f92672">=</span><span style="color:#ae81ff">0x001AB066B84949582E3F66688452B9255E72A017C45B148D719D9A63CDB7BE6F48C812E33B68161D5AB3A0A36906F04A6A6957E6F4FB2E0</span>
+yP21<span style="color:#f92672">=</span><span style="color:#ae81ff">0x000FD87F67EA576CE97FF65BF9F4F7688C4C752DCE9F8BD2B36AD66E04249AAF8337C01E6E4E1A844267BA1A1887B433729E1DD90C7DD2F</span>
+xQ30<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0012E84D7652558E694BF84C1FBDAAF99B83B4266C32EC65B10457BCAF94C63EB063681E8B1E7398C0B241C19B9665FDB9E1406DA3D3846</span>
+xQ31<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0000000</span>
+yQ30<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0000000</span>
+yQ31<span style="color:#f92672">=</span><span style="color:#ae81ff">0x000EBAAA6C731271673BEECE467FD5ED9CC29AB564BDED7BDEAA86DD1E0FDDF399EDCC9B49C829EF53C7D7A35C3A0745D73C424FB4A5FD2</span>
+xP30<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0008664865EA7D816F03B31E223C26D406A2C6CD0C3D667466056AAE85895EC37368BFC009DFAFCB3D97E639F65E9E45F46573B0637B7A9</span>
+xP31<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0000000</span>
+yP30<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0006AE515593E73976091978DFBD70BDA0DD6BCAEEBFDD4FB1E748DDD9ED3FDCF679726C67A3B2CC12B39805B32B612E058A4280764443B</span>
+yP31<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0000000</span>
+
+Q_A <span style="color:#f92672">=</span> E(xQ20 <span style="color:#f92672">+</span> xQ21<span style="color:#f92672">*</span>i, yQ20 <span style="color:#f92672">+</span> yQ21<span style="color:#f92672">*</span>i)
+P_A <span style="color:#f92672">=</span> E(xP20 <span style="color:#f92672">+</span> xP21<span style="color:#f92672">*</span>i, yP20 <span style="color:#f92672">+</span> yP21<span style="color:#f92672">*</span>i)
+Q_B <span style="color:#f92672">=</span> E(xQ30 <span style="color:#f92672">+</span> xQ31<span style="color:#f92672">*</span>i, yQ30 <span style="color:#f92672">+</span> yQ31<span style="color:#f92672">*</span>i)
+P_B <span style="color:#f92672">=</span> E(xP30 <span style="color:#f92672">+</span> xP31<span style="color:#f92672">*</span>i, yP30 <span style="color:#f92672">+</span> yP31<span style="color:#f92672">*</span>i)
+
+<span style="color:#75715e"># Computes an l^e-isogeny out of E from a set Ss of kernel generators</span>
+<span style="color:#75715e"># as a composition of e l-isogenies</span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">computeIsogeny</span>(E, Ss, l, e):
+    S_tmps <span style="color:#f92672">=</span> Ss
+    E_tmp <span style="color:#f92672">=</span> E
+    <span style="color:#960050;background-color:#1e0010">ϕ</span> <span style="color:#f92672">=</span> None
+    <span style="color:#66d9ef">for</span> k <span style="color:#f92672">in</span> range(e):
+        R_tmps <span style="color:#f92672">=</span> S_tmps
+        <span style="color:#66d9ef">for</span> _ <span style="color:#f92672">in</span> range(e<span style="color:#f92672">-</span>k<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>):
+            R_tmps <span style="color:#f92672">=</span> [ l<span style="color:#f92672">*</span>R_tmp <span style="color:#66d9ef">for</span> R_tmp <span style="color:#f92672">in</span> R_tmps ]
+        <span style="color:#960050;background-color:#1e0010">ϕ</span>_k <span style="color:#f92672">=</span> E_tmp<span style="color:#f92672">.</span>isogeny(kernel<span style="color:#f92672">=</span>R_tmps)
+
+        S_tmps <span style="color:#f92672">=</span> [ <span style="color:#960050;background-color:#1e0010">ϕ</span>_k(S_tmp) <span style="color:#66d9ef">for</span> S_tmp <span style="color:#f92672">in</span> S_tmps ]
+        E_tmp <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">ϕ</span>_k<span style="color:#f92672">.</span>codomain()
+        <span style="color:#66d9ef">if</span> <span style="color:#960050;background-color:#1e0010">ϕ</span> <span style="color:#f92672">is</span> None:
+            <span style="color:#960050;background-color:#1e0010">ϕ</span> <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">ϕ</span>_k
+        <span style="color:#66d9ef">else</span>:
+            <span style="color:#960050;background-color:#1e0010">ϕ</span> <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">ϕ</span>_k <span style="color:#f92672">*</span> <span style="color:#960050;background-color:#1e0010">ϕ</span>
+    <span style="color:#66d9ef">return</span> <span style="color:#960050;background-color:#1e0010">ϕ</span>
+
+k_A <span style="color:#f92672">=</span> randint(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">2</span><span style="color:#f92672">^</span><span style="color:#ae81ff">216</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+S_A <span style="color:#f92672">=</span> P_A <span style="color:#f92672">+</span> k_A<span style="color:#f92672">*</span>Q_A
+<span style="color:#960050;background-color:#1e0010">ϕ</span>_A <span style="color:#f92672">=</span> computeIsogeny(E, [S_A], <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">216</span>)
+Alice <span style="color:#f92672">=</span> (<span style="color:#960050;background-color:#1e0010">ϕ</span>_A<span style="color:#f92672">.</span>codomain()<span style="color:#f92672">.</span>a_invariants(), <span style="color:#960050;background-color:#1e0010">ϕ</span>_A(P_B)<span style="color:#f92672">.</span>xy(), <span style="color:#960050;background-color:#1e0010">ϕ</span>_A(Q_B)<span style="color:#f92672">.</span>xy(), <span style="color:#960050;background-color:#1e0010">ϕ</span>_A(P_A)<span style="color:#f92672">.</span>xy(), <span style="color:#960050;background-color:#1e0010">ϕ</span>_A(Q_A)<span style="color:#f92672">.</span>xy())
+<span style="color:#66d9ef">print</span>(f<span style="color:#e6db74">&#34;Alice = {Alice}&#34;</span>)
+
+k_B <span style="color:#f92672">=</span> randint(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">3</span><span style="color:#f92672">^</span><span style="color:#ae81ff">137</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) 
+S_B <span style="color:#f92672">=</span> P_B <span style="color:#f92672">+</span> k_B<span style="color:#f92672">*</span>Q_B
+<span style="color:#960050;background-color:#1e0010">ϕ</span>_B <span style="color:#f92672">=</span> computeIsogeny(E, [S_B], <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">137</span>)
+Bob <span style="color:#f92672">=</span> (<span style="color:#960050;background-color:#1e0010">ϕ</span>_B<span style="color:#f92672">.</span>codomain()<span style="color:#f92672">.</span>a_invariants(), <span style="color:#960050;background-color:#1e0010">ϕ</span>_B(P_A)<span style="color:#f92672">.</span>xy(), <span style="color:#960050;background-color:#1e0010">ϕ</span>_B(Q_A)<span style="color:#f92672">.</span>xy())
+<span style="color:#66d9ef">print</span>(f<span style="color:#e6db74">&#34;Bob = {Bob}&#34;</span>)
+
+(E_B, B_P_A, B_Q_A) <span style="color:#f92672">=</span> Bob
+E_B <span style="color:#f92672">=</span> EllipticCurve(F, E_B)
+B_P_A <span style="color:#f92672">=</span> E_B(B_P_A)
+B_Q_A <span style="color:#f92672">=</span> E_B(B_Q_A)
+B_S_A <span style="color:#f92672">=</span> B_P_A <span style="color:#f92672">+</span> k_A<span style="color:#f92672">*</span>B_Q_A
+jAlice <span style="color:#f92672">=</span> computeIsogeny(E_B, [B_S_A], <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">216</span>)<span style="color:#f92672">.</span>codomain()<span style="color:#f92672">.</span>j_invariant()
+
+(E_A, A_P_B, A_Q_B, _, _) <span style="color:#f92672">=</span> Alice
+E_A <span style="color:#f92672">=</span> EllipticCurve(F, E_A)
+A_P_B <span style="color:#f92672">=</span> E_A(A_P_B)
+A_Q_B <span style="color:#f92672">=</span> E_A(A_Q_B)
+A_S_B <span style="color:#f92672">=</span> A_P_B <span style="color:#f92672">+</span> k_B<span style="color:#f92672">*</span>A_Q_B
+jBob <span style="color:#f92672">=</span> computeIsogeny(E_A, [A_S_B], <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">137</span>)<span style="color:#f92672">.</span>codomain()<span style="color:#f92672">.</span>j_invariant()
+
+<span style="color:#66d9ef">assert</span> jAlice <span style="color:#f92672">==</span> jBob
+
+flag <span style="color:#f92672">=</span> open(<span style="color:#e6db74">&#34;flag.txt&#34;</span>, <span style="color:#e6db74">&#34;rb&#34;</span>)<span style="color:#f92672">.</span>read()<span style="color:#f92672">.</span>strip()
+<span style="color:#66d9ef">assert</span> len(flag) <span style="color:#f92672">==</span> <span style="color:#ae81ff">32</span>
+
+sk <span style="color:#f92672">=</span> hashlib<span style="color:#f92672">.</span>sha256(str(jAlice)<span style="color:#f92672">.</span>encode(<span style="color:#e6db74">&#39;ascii&#39;</span>))<span style="color:#f92672">.</span>digest()[:<span style="color:#ae81ff">16</span>]
+cipher <span style="color:#f92672">=</span> AES<span style="color:#f92672">.</span>new(sk, AES<span style="color:#f92672">.</span>MODE_CBC)
+<span style="color:#66d9ef">print</span>(f<span style="color:#e6db74">&#34;iv = {b64encode(cipher.iv)}&#34;</span>)
+<span style="color:#66d9ef">print</span>(f<span style="color:#e6db74">&#34;ct = {b64encode(cipher.encrypt(flag))}&#34;</span>)
+</code></pre></div><p>If you want to know <code>SIDH</code>, you can read <a href="https://sectt.github.io/writeups/UnionCTF21/crypto_raven/README">this write-up</a>.</p>
+<p>And if we focus on the code, we can simply see that <code>Alice</code> send something important:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#960050;background-color:#1e0010">ϕ</span>_A(P_A)<span style="color:#f92672">.</span>xy(), <span style="color:#960050;background-color:#1e0010">ϕ</span>_A(Q_A)<span style="color:#f92672">.</span>xy()
+</code></pre></div><p>Since $ϕ_A$ has:
+$$
+S_A = P_A + k_AQ_A
+$$
+as its kernel, we can get:
+$$
+\phi(S_A) = \phi(P_A + k_AQ_A) = \phi(P_A) + k_A\phi(Q_A) = 0
+$$
+So we can just calculate $k_A$ with <code>discrete_log</code></p>
+<h4 id="exp-4">Exp</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> hashlib
+<span style="color:#f92672">from</span> base64 <span style="color:#f92672">import</span> b64decode
+<span style="color:#f92672">from</span> Crypto.Cipher <span style="color:#f92672">import</span> AES
+
+p <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">^</span><span style="color:#ae81ff">216</span><span style="color:#f92672">*</span><span style="color:#ae81ff">3</span><span style="color:#f92672">^</span><span style="color:#ae81ff">137</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+F<span style="color:#f92672">.&lt;</span>i<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> GF(p<span style="color:#f92672">^</span><span style="color:#ae81ff">2</span>, modulus<span style="color:#f92672">=</span>x<span style="color:#f92672">^</span><span style="color:#ae81ff">2</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>)
+E <span style="color:#f92672">=</span> EllipticCurve(F, [<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">6</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>])
+
+xQ20<span style="color:#f92672">=</span><span style="color:#ae81ff">0x000C7461738340EFCF09CE388F666EB38F7F3AFD42DC0B664D9F461F31AA2EDC6B4AB71BD42F4D7C058E13F64B237EF7DDD2ABC0DEB0C6C</span>
+xQ21<span style="color:#f92672">=</span><span style="color:#ae81ff">0x00025DE37157F50D75D320DD0682AB4A67E471586FBC2D31AA32E6957FA2B2614C4CD40A1E27283EAAF4272AE517847197432E2D61C85F5</span>
+yQ20<span style="color:#f92672">=</span><span style="color:#ae81ff">0x001D407B70B01E4AEE172EDF491F4EF32144F03F5E054CEF9FDE5A35EFA3642A11817905ED0D4F193F31124264924A5F64EFE14B6EC97E5</span>
+yQ21<span style="color:#f92672">=</span><span style="color:#ae81ff">0x000E7DEC8C32F50A4E735A839DCDB89FE0763A184C525F7B7D0EBC0E84E9D83E9AC53A572A25D19E1464B509D97272AE761657B4765B3D6</span>
+xP20<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0003CCFC5E1F050030363E6920A0F7A4C6C71E63DE63A0E6475AF621995705F7C84500CB2BB61E950E19EAB8661D25C4A50ED279646CB48</span>
+xP21<span style="color:#f92672">=</span><span style="color:#ae81ff">0x001AD1C1CAE7840EDDA6D8A924520F60E573D3B9DFAC6D189941CB22326D284A8816CC4249410FE80D68047D823C97D705246F869E3EA50</span>
+yP20<span style="color:#f92672">=</span><span style="color:#ae81ff">0x001AB066B84949582E3F66688452B9255E72A017C45B148D719D9A63CDB7BE6F48C812E33B68161D5AB3A0A36906F04A6A6957E6F4FB2E0</span>
+yP21<span style="color:#f92672">=</span><span style="color:#ae81ff">0x000FD87F67EA576CE97FF65BF9F4F7688C4C752DCE9F8BD2B36AD66E04249AAF8337C01E6E4E1A844267BA1A1887B433729E1DD90C7DD2F</span>
+xQ30<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0012E84D7652558E694BF84C1FBDAAF99B83B4266C32EC65B10457BCAF94C63EB063681E8B1E7398C0B241C19B9665FDB9E1406DA3D3846</span>
+xQ31<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0000000</span>
+yQ30<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0000000</span>
+yQ31<span style="color:#f92672">=</span><span style="color:#ae81ff">0x000EBAAA6C731271673BEECE467FD5ED9CC29AB564BDED7BDEAA86DD1E0FDDF399EDCC9B49C829EF53C7D7A35C3A0745D73C424FB4A5FD2</span>
+xP30<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0008664865EA7D816F03B31E223C26D406A2C6CD0C3D667466056AAE85895EC37368BFC009DFAFCB3D97E639F65E9E45F46573B0637B7A9</span>
+xP31<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0000000</span>
+yP30<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0006AE515593E73976091978DFBD70BDA0DD6BCAEEBFDD4FB1E748DDD9ED3FDCF679726C67A3B2CC12B39805B32B612E058A4280764443B</span>
+yP31<span style="color:#f92672">=</span><span style="color:#ae81ff">0x0000000</span>
+
+Q_A <span style="color:#f92672">=</span> E(xQ20 <span style="color:#f92672">+</span> xQ21<span style="color:#f92672">*</span>i, yQ20 <span style="color:#f92672">+</span> yQ21<span style="color:#f92672">*</span>i)
+P_A <span style="color:#f92672">=</span> E(xP20 <span style="color:#f92672">+</span> xP21<span style="color:#f92672">*</span>i, yP20 <span style="color:#f92672">+</span> yP21<span style="color:#f92672">*</span>i)
+Q_B <span style="color:#f92672">=</span> E(xQ30 <span style="color:#f92672">+</span> xQ31<span style="color:#f92672">*</span>i, yQ30 <span style="color:#f92672">+</span> yQ31<span style="color:#f92672">*</span>i)
+P_B <span style="color:#f92672">=</span> E(xP30 <span style="color:#f92672">+</span> xP31<span style="color:#f92672">*</span>i, yP30 <span style="color:#f92672">+</span> yP31<span style="color:#f92672">*</span>i)
+
+<span style="color:#75715e"># Computes an l^e-isogeny out of E from a set Ss of kernel generators</span>
+<span style="color:#75715e"># as a composition of e l-isogenies</span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">computeIsogeny</span>(E, Ss, l, e):
+    S_tmps <span style="color:#f92672">=</span> Ss
+    E_tmp <span style="color:#f92672">=</span> E
+    <span style="color:#960050;background-color:#1e0010">ϕ</span> <span style="color:#f92672">=</span> None
+    <span style="color:#66d9ef">for</span> k <span style="color:#f92672">in</span> range(e):
+        R_tmps <span style="color:#f92672">=</span> S_tmps
+        <span style="color:#66d9ef">for</span> _ <span style="color:#f92672">in</span> range(e<span style="color:#f92672">-</span>k<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>):
+            R_tmps <span style="color:#f92672">=</span> [ l<span style="color:#f92672">*</span>R_tmp <span style="color:#66d9ef">for</span> R_tmp <span style="color:#f92672">in</span> R_tmps ]
+        <span style="color:#960050;background-color:#1e0010">ϕ</span>_k <span style="color:#f92672">=</span> E_tmp<span style="color:#f92672">.</span>isogeny(kernel<span style="color:#f92672">=</span>R_tmps)
+
+        S_tmps <span style="color:#f92672">=</span> [ <span style="color:#960050;background-color:#1e0010">ϕ</span>_k(S_tmp) <span style="color:#66d9ef">for</span> S_tmp <span style="color:#f92672">in</span> S_tmps ]
+        E_tmp <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">ϕ</span>_k<span style="color:#f92672">.</span>codomain()
+        <span style="color:#66d9ef">if</span> <span style="color:#960050;background-color:#1e0010">ϕ</span> <span style="color:#f92672">is</span> None:
+            <span style="color:#960050;background-color:#1e0010">ϕ</span> <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">ϕ</span>_k
+        <span style="color:#66d9ef">else</span>:
+            <span style="color:#960050;background-color:#1e0010">ϕ</span> <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">ϕ</span>_k <span style="color:#f92672">*</span> <span style="color:#960050;background-color:#1e0010">ϕ</span>
+    <span style="color:#66d9ef">return</span> <span style="color:#960050;background-color:#1e0010">ϕ</span>
+
+Alice <span style="color:#f92672">=</span> ((<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">6</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">6001602663961206370988750155271268843249113105575064100544244329723627508642651491029799456469448718421085928092642609765039188242</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">17122560027285283790825644308649714063340414789188915872095421354901510218060415163697310413170734130335144089439494750625538071980</span>, <span style="color:#ae81ff">22241966002746626067354539975418232642475646213518284443509300453664841759671344583904727702765870170961054029730219838438930886730</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">6295409890219768050656401214128285134680958664621604435525993857295024885942522198730338761351461854361939143813589229958450834937</span>), (<span style="color:#ae81ff">20693617845250531673791079572257479372406496374051176010221583150895284635664420984163027961195027146723306399733543575074371571546</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">12579440504826227790399898461168329080116453795381885031938887599830693619864645875985379594607106805272063128287141040474324472579</span>, <span style="color:#ae81ff">17003339040898697587060167865681315428279965204095022676751761236717662173320135824191474549296911745414760875386583097246892970743</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">2450227209495560745928392442008559789430024267104386893781343959329588604681368476319376824183170770268590193199446339985032818433</span>), (<span style="color:#ae81ff">24196999226902675779045571226331502647086872832197399777068255320010293863359017283213324144431537822661506383681353187559191999771</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">14031872773998733507298731440596005313939108957137912313429212267974724984039194243338858626174518892025349039167378718436374581722</span>, <span style="color:#ae81ff">10067956801857468023514754660550671095579147019588599811273848235704360993890497575424172688000039308192770149207724142524545451074</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">9704956586624341710808951764565861341114293792082683257320510639095567055930904001585984811139137392398321200917960531515122425604</span>), (<span style="color:#ae81ff">21482597851178884503353076937735588452957177768806776910812379517549572253101759233236102347370343956671258496673645283509995572850</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">14096078902807078355928598956816130045619245790159384751176932745646753234211180941505758827833314091690388346935619473665442809259</span>, <span style="color:#ae81ff">13679392986650554551011681934303695650088628896811869083453967966676089303335417699532232752393700725181942165609165070072195990421</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">22303973329492411565669001646989446651767650420180177485066511378012378529261175557912535448570067170663048114739927772127080694786</span>), (<span style="color:#ae81ff">5031508630808576087782892353323275460174142373365249589846782383660521445945988018058115279743582819518492860550820586178080959929</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">20361864043088022309832424954188288334129520236737890920001299362176525293198035690628699135584668073379687130832090636102750496003</span>, <span style="color:#ae81ff">5326896702997677262072220524322872052674185107431056651996898750306495168544570294686542579294013185895403025686718275379409582021</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">7018087072590614715963128743406699936749123349867893045580774389322712378049822434865393438816413618294542843639485193888664986503</span>))
+Bob <span style="color:#f92672">=</span> ((<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">6</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">2510377837984569005668272963938229152759212776314258952545654072169410901298850712372306096701112903052487282410712205434980682770</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1533616599018469519548641055342254252507904258735350043186382046019246639038089759129707675919612374167907298647004842048842483225</span>, <span style="color:#ae81ff">13335813103700469160284801960413086144549776993448017319107340684719947118153850729369660724596130930055245047262733708054423015655</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">17338799868192494405204548102094725343306200019012693785648257092061088427620739800739315465276207804594142456129224673452195357714</span>), (<span style="color:#ae81ff">2771195673566835722887342815479686444463738278075014443830431110033775598812266459191044593910730473384513927831673567602258951977</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">14695642564069380381636057787623481658663045420929947439988595067986417545517691517441254145488869846179463754817003384192274626463</span>, <span style="color:#ae81ff">18564301293503451778592169644157610474379393936432543000343986957900909392616771402521075243703340903344745798060095728893961976940</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">19628333731314344646926186187873836263784148023213378217245128148326949516664862760385029489345376891188072162779569669305066964933</span>), (<span style="color:#ae81ff">22650214990480384681860370457554162699319780968761610136003430194938807060051700030135993836240770510069117319449743388225281444184</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">3377155996988041268039072873935941531295378688722591082040326948052676519006168915555632884024981285908480033902758240587615693054</span>, <span style="color:#ae81ff">17806681788782120983952163360625445316482360798557639190977860032884873427321883793075291472918577432082376117267831746467121303568</span><span style="color:#f92672">*</span>i <span style="color:#f92672">+</span> <span style="color:#ae81ff">21533180999838449404329422084189008931697041812999894837076670480949795196804840300494281304611360768987802541355649881398701758313</span>))
+iv <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;XSglnu+2ZwFuHGE8ddIuJQ==&#39;</span>
+ct <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;4VR9ty+lFW6oQoWTVHiDE7A9uKw0KbQzpnCWOGVQXGo=&#39;</span>
+
+(E_A, A_P_B, A_Q_B, A_P_A, A_Q_A) <span style="color:#f92672">=</span> Alice
+E_A <span style="color:#f92672">=</span> EllipticCurve(F, E_A)
+A_P_B <span style="color:#f92672">=</span> E_A(A_P_B)
+A_Q_B <span style="color:#f92672">=</span> E_A(A_Q_B)
+A_P_A <span style="color:#f92672">=</span> E_A(A_P_A)
+A_Q_A <span style="color:#f92672">=</span> E_A(A_Q_A)
+
+(E_B, B_P_A, B_Q_A) <span style="color:#f92672">=</span> Bob
+E_B <span style="color:#f92672">=</span> EllipticCurve(F, E_B)
+B_P_A <span style="color:#f92672">=</span> E_B(B_P_A)
+B_Q_A <span style="color:#f92672">=</span> E_B(B_Q_A)
+
+<span style="color:#75715e"># A_P_A + k_A * A_Q_A == 0</span>
+k_A <span style="color:#f92672">=</span> discrete_log(E_A(<span style="color:#ae81ff">0</span>) <span style="color:#f92672">-</span> A_P_A, A_Q_A, ord <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">^</span> <span style="color:#ae81ff">216</span>, operation <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;+&#34;</span>)
+
+B_S_A <span style="color:#f92672">=</span> B_P_A <span style="color:#f92672">+</span> k_A <span style="color:#f92672">*</span> B_Q_A
+jAlice <span style="color:#f92672">=</span> computeIsogeny(E_B, [B_S_A], <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">216</span>)<span style="color:#f92672">.</span>codomain()<span style="color:#f92672">.</span>j_invariant()
+
+sk <span style="color:#f92672">=</span> hashlib<span style="color:#f92672">.</span>sha256(str(jAlice)<span style="color:#f92672">.</span>encode(<span style="color:#e6db74">&#39;ascii&#39;</span>))<span style="color:#f92672">.</span>digest()[:<span style="color:#ae81ff">16</span>]
+iv <span style="color:#f92672">=</span> b64decode(iv)
+ct <span style="color:#f92672">=</span> b64decode(ct)
+cipher <span style="color:#f92672">=</span> AES<span style="color:#f92672">.</span>new(sk, AES<span style="color:#f92672">.</span>MODE_CBC, iv)
+flag <span style="color:#f92672">=</span> cipher<span style="color:#f92672">.</span>decrypt(ct)
+<span style="color:#66d9ef">print</span>(flag)
+
+<span style="color:#75715e"># union{al1c3_in_t0r51ongr0upl4nd}</span>
+</code></pre></div><h2 id="references">References</h2>
+<p><a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">https://en.wikipedia.org/wiki/Man-in-the-middle_attack</a></p>
+<p><a href="https://rkm0959.tistory.com/206">https://rkm0959.tistory.com/206</a></p>
+<p><a href="https://en.wikipedia.org/wiki/Jordan_normal_form">https://en.wikipedia.org/wiki/Jordan_normal_form</a></p>
+<p><a href="https://sectt.github.io/writeups/UnionCTF21/crypto_raven/README">https://sectt.github.io/writeups/UnionCTF21/crypto_raven/README</a></p>
+]]></content>
+        </item>
         
         <item>
             <title>2021DiceCTF-WriteUp</title>
@@ -73,7 +946,8 @@ r<span style="color:#f92672">.</span>sendline(p64(system_addr) <span style="colo
 csu(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>,bss <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x108</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">0</span>,bss <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x100</span>,main_addr,<span style="color:#ae81ff">0x40</span>)
 
 r<span style="color:#f92672">.</span>interactive()
-</code></pre></div><h3 id="flippidyrecurrence">flippidy(Recurrence)</h3>
+</code></pre></div><h3 id="flippidy">flippidy</h3>
+<p>This writeup is referenced from <a href="https://teamrocketist.github.io/2021/02/08/Pwn-DiceCTF2021-flippidy/">TeamRocketIST</a></p>
 <h4 id="analysis-1">Analysis</h4>
 <p>This is a no-PIE program.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">Arch:     amd64-64-little
@@ -282,7 +1156,8 @@ flip() <span style="color:#75715e"># get shell</span>
 
 r<span style="color:#f92672">.</span>interactive()
 </code></pre></div><h2 id="crypto">Crypto</h2>
-<h3 id="garbledrecurrence">garbled(Recurrence)</h3>
+<h3 id="garbled">garbled</h3>
+<p>This writeup is referenced from <a href="https://www.josephsurin.me/posts/2021-02-08-dicectf-2021-garbled">Joseph</a></p>
 <h4 id="analysis-2">Analysis</h4>
 <p>This is a <code>Garbled Circuit</code> challenge. We should recover the <code>inputs</code> to get flag.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># obtain_flag.py</span>
@@ -845,7 +1720,8 @@ xor_flag <span style="color:#f92672">=</span> <span style="color:#e6db74">b</spa
 flag <span style="color:#f92672">=</span> xor(m<span style="color:#f92672">.</span>digest(),xor_flag)
 <span style="color:#66d9ef">print</span>(flag)
 <span style="color:#75715e"># dice{N0w_YoUr3_Th1nkIn6_Wi7H_pR0t0c015}</span>
-</code></pre></div><h3 id="benalohrecurrence">benaloh(Recurrence)</h3>
+</code></pre></div><h3 id="benaloh">benaloh</h3>
+<p>This writeup is referenced from <a href="https://priv.pub/posts/dicectf-2021/">defund</a></p>
 <h4 id="analysis-3">Analysis</h4>
 <p>This is a <a href="https://en.wikipedia.org/wiki/Benaloh_cryptosystem">Benaloh cryptosystem</a> challenge, the code is short:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># benaloh</span>
@@ -948,11 +1824,121 @@ pol <span style="color:#f92672">=</span> <span style="color:#f92672">-</span> B[
 flag <span style="color:#f92672">=</span> long_to_bytes(flag)
 <span style="color:#66d9ef">print</span>(flag)
 <span style="color:#75715e"># dice{gr:obner!_!}</span>
+</code></pre></div><h3 id="plagiarism">plagiarism</h3>
+<p>This writeup is referenced from <a href="https://mystiz.hk/posts/2021-02-15-dicectf-1/#plagiarism">mystiz</a></p>
+<h4 id="analysis-4">Analysis</h4>
+<p>This challenge is and <code>Related Message Attack</code> on RSA:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">Two agents, Blex <span style="color:#f92672">and</span> Kane, have simultaneously known very secret message <span style="color:#f92672">and</span> transmitted it to Center<span style="color:#f92672">.</span> You know following:
+<span style="color:#ae81ff">1</span>) They used RSA <span style="color:#66d9ef">with</span> this public key
+<span style="color:#ae81ff">2</span>) They sent exactly the same messages <span style="color:#66d9ef">except</span> the signatures (name appended, eg<span style="color:#f92672">.</span> <span style="color:#e6db74">&#34;[message]Blex&#34;</span>)
+<span style="color:#ae81ff">3</span>) They did encryption this way:
+
+m <span style="color:#f92672">=</span> int(message<span style="color:#f92672">.</span>encode(<span style="color:#e6db74">&#34;hex&#34;</span>), <span style="color:#ae81ff">16</span>)
+c <span style="color:#f92672">=</span> pow(m, e, N)
+
+<span style="color:#ae81ff">4</span>) And here are cryptograms you have intercepted:
+
+N <span style="color:#f92672">=</span> <span style="color:#ae81ff">25898966400928827905718377946331123070958718286581765316565582158865227877882475404853218079499084099440419144196215764927720893687968939899067275095801562867742359933997487928281899714724738097735994026225339488710478292473051567851786254924548138570069406420407124627567648479424564834446192417334669768477661434992797176428220265984651288944265998446714590797833756720922745187467388408600309665467669255896919554072379878017822219455974525233467767926938557154083882126002952139561283708342676308894318951822068027821029295524097544028901807902120777407151278396388621981625398417573347316888458337381776303199529</span>
+
+e <span style="color:#f92672">=</span> <span style="color:#ae81ff">1048577</span>
+
+ciphertext_Blex <span style="color:#f92672">=</span> <span style="color:#ae81ff">11140520553087800834883326476247582685177207584737264356946559762068509060522907835540767944557089926814767920501376431871780404000550271362410228709616559148950928004959648199391157781102695421411667843970881959939688515679415870087007797819271601359811630724878746762862603629420061133824605384527474682526549557804674160851967543475275374840169790764048711047622418045734436512050742433282306694490346907876574514077395835974083376649624559301087384766644865104383786285302561584731767419571603248493060257358632833957327996996960955767927114473513709882904104552609194519132931270741118197821776138632855021619178</span>
+
+ciphertext_Kane <span style="color:#f92672">=</span> <span style="color:#ae81ff">2922817623733019475805146570530296261205732600738503605503192845278422660686627490817081424885152809772315629265930072636690234953045955503581182067349322827011065359648958225896393305011175960879100475146203207801533980643261035226402857047007061320653920746872424363923515091038846823007819033456503365649022294092944985887626605207259444051959239244136999684366533551627508385114998024232490369665950339127904350803268889205463047713233591604324960184727360413931125906144631968128488876241314939855024305076160092193380013725939761970042406866169417457376487954247442308318888399299295082898238584625937490546472</span>
+
+Now tell me that secret message<span style="color:#960050;background-color:#1e0010">!</span> (The answer <span style="color:#66d9ef">for</span> this task starts <span style="color:#f92672">from</span> <span style="color:#e6db74">&#39;dice{&#39;</span>) 
+</code></pre></div><p>The difference from <a href="https://hxp.io/blog/1/RuCTF%20Quals%202014:%20Crypto%20500%20%22decrypt%20message%22%20writeup/">RuCTF Quals 2014: decrypt message</a> is that e is bigger than before.</p>
+<p>So the original method will fail due to runtime issues.</p>
+<p>We can use <a href="http://web.cs.iastate.edu/~cs577/handouts/polydivide.pdf">HGCD</a> instead of GCD to solve this challenge.</p>
+<h4 id="exp-4">Exp</h4>
+<p>This code is written by <code>the entire country of ireland</code> in <a href="https://discord.gg/CbCXtrDE5m">discord</a></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> binascii
+<span style="color:#f92672">from</span> Crypto.Util.number <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">HGCD</span>(p1, p2):
+    deg1 <span style="color:#f92672">=</span> p1<span style="color:#f92672">.</span>degree()
+    deg2 <span style="color:#f92672">=</span> p2<span style="color:#f92672">.</span>degree()
+    
+    m <span style="color:#f92672">=</span> deg1 <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+    
+    <span style="color:#66d9ef">if</span> deg2 <span style="color:#f92672">&lt;=</span> deg1 <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>:
+        <span style="color:#66d9ef">return</span> Matrix(R, [[<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">0</span>],[<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>]])
+
+    p1_coeffs <span style="color:#f92672">=</span> p1<span style="color:#f92672">.</span>coefficients()
+    b1 <span style="color:#f92672">=</span> R(p1_coeffs[m:])
+    c1 <span style="color:#f92672">=</span> R(p1_coeffs[:m])
+
+    p2_coeffs <span style="color:#f92672">=</span> p2<span style="color:#f92672">.</span>coefficients()
+    b2 <span style="color:#f92672">=</span> R(p2_coeffs[m:])
+    c2 <span style="color:#f92672">=</span> R(p2_coeffs[:m])
+
+    M <span style="color:#f92672">=</span> HGCD(b1, b2)
+
+    v <span style="color:#f92672">=</span> M <span style="color:#f92672">*</span> vector([p1, p2])
+    d,e <span style="color:#f92672">=</span> v
+
+    q,r <span style="color:#f92672">=</span> d<span style="color:#f92672">.</span>quo_rem(e)
+    f <span style="color:#f92672">=</span> r
+    U <span style="color:#f92672">=</span> Matrix(R, [[<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>], [<span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span>q]])
+
+    m <span style="color:#f92672">=</span> m <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+
+    e_coeffs <span style="color:#f92672">=</span> e<span style="color:#f92672">.</span>coefficients()
+    g1 <span style="color:#f92672">=</span> R(e_coeffs[m:])
+    h1 <span style="color:#f92672">=</span> R(e_coeffs[:m])
+
+    f_coeffs <span style="color:#f92672">=</span> f<span style="color:#f92672">.</span>coefficients()
+    g2 <span style="color:#f92672">=</span> R(f_coeffs[m:])
+    h2 <span style="color:#f92672">=</span> R(f_coeffs[:m])
+
+
+    S <span style="color:#f92672">=</span> HGCD(g1, g2)
+
+    Result <span style="color:#f92672">=</span> S <span style="color:#f92672">*</span> U <span style="color:#f92672">*</span> M
+    <span style="color:#66d9ef">return</span> Result
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">GCD</span>(p1, p2):
+    q,r <span style="color:#f92672">=</span> p1<span style="color:#f92672">.</span>quo_rem(p2)
+    <span style="color:#66d9ef">if</span> r <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+        <span style="color:#66d9ef">return</span> p2
+    p1,p2 <span style="color:#f92672">=</span> p2, r
+    
+    M <span style="color:#f92672">=</span> HGCD(p1, p2)
+    
+    v <span style="color:#f92672">=</span> M <span style="color:#f92672">*</span> vector([p1, p2])
+    b1, b2 <span style="color:#f92672">=</span> v
+    
+    q,r <span style="color:#f92672">=</span> b1<span style="color:#f92672">.</span>quo_rem(b2)
+    
+    <span style="color:#66d9ef">if</span> r <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+        <span style="color:#66d9ef">return</span> b2
+    
+    <span style="color:#66d9ef">return</span> GCD(b2, r)
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">franklin_reiter</span>(p1, p2):
+    g <span style="color:#f92672">=</span> GCD(p1, p2)
+    a0, a1 <span style="color:#f92672">=</span> g<span style="color:#f92672">.</span>coefficients()
+    <span style="color:#66d9ef">return</span> Integer(<span style="color:#f92672">-</span>a0<span style="color:#f92672">/</span>a1)
+
+N <span style="color:#f92672">=</span> <span style="color:#ae81ff">25898966400928827905718377946331123070958718286581765316565582158865227877882475404853218079499084099440419144196215764927720893687968939899067275095801562867742359933997487928281899714724738097735994026225339488710478292473051567851786254924548138570069406420407124627567648479424564834446192417334669768477661434992797176428220265984651288944265998446714590797833756720922745187467388408600309665467669255896919554072379878017822219455974525233467767926938557154083882126002952139561283708342676308894318951822068027821029295524097544028901807902120777407151278396388621981625398417573347316888458337381776303199529</span>
+e <span style="color:#f92672">=</span> <span style="color:#ae81ff">1048577</span>
+c1 <span style="color:#f92672">=</span> <span style="color:#ae81ff">11140520553087800834883326476247582685177207584737264356946559762068509060522907835540767944557089926814767920501376431871780404000550271362410228709616559148950928004959648199391157781102695421411667843970881959939688515679415870087007797819271601359811630724878746762862603629420061133824605384527474682526549557804674160851967543475275374840169790764048711047622418045734436512050742433282306694490346907876574514077395835974083376649624559301087384766644865104383786285302561584731767419571603248493060257358632833957327996996960955767927114473513709882904104552609194519132931270741118197821776138632855021619178</span>
+c2 <span style="color:#f92672">=</span> <span style="color:#ae81ff">2922817623733019475805146570530296261205732600738503605503192845278422660686627490817081424885152809772315629265930072636690234953045955503581182067349322827011065359648958225896393305011175960879100475146203207801533980643261035226402857047007061320653920746872424363923515091038846823007819033456503365649022294092944985887626605207259444051959239244136999684366533551627508385114998024232490369665950339127904350803268889205463047713233591604324960184727360413931125906144631968128488876241314939855024305076160092193380013725939761970042406866169417457376487954247442308318888399299295082898238584625937490546472</span>
+delta  <span style="color:#f92672">=</span> int(binascii<span style="color:#f92672">.</span>hexlify(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;Kane&#39;</span>), <span style="color:#ae81ff">16</span>) <span style="color:#f92672">-</span> int(binascii<span style="color:#f92672">.</span>hexlify(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;Blex&#39;</span>), <span style="color:#ae81ff">16</span>)
+
+R<span style="color:#f92672">.&lt;</span>x<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> PolynomialRing(IntegerModRing(N))
+p1 <span style="color:#f92672">=</span> x<span style="color:#f92672">^</span>e <span style="color:#f92672">-</span> c1
+p2 <span style="color:#f92672">=</span> (x<span style="color:#f92672">+</span>delta)<span style="color:#f92672">^</span>e <span style="color:#f92672">-</span> c2
+
+flag <span style="color:#f92672">=</span> franklin_reiter(p1, p2)
+flag <span style="color:#f92672">=</span> long_to_bytes(flag)
+<span style="color:#66d9ef">print</span>(flag)
 </code></pre></div><h2 id="reverse">Reverse</h2>
 <h3 id="babymix">babymix</h3>
-<h4 id="analysis-4">Analysis</h4>
+<h4 id="analysis-5">Analysis</h4>
 <p>Just use z3 to solve it.</p>
-<h4 id="exp-4">Exp</h4>
+<h4 id="exp-5">Exp</h4>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python</span>
 <span style="color:#f92672">from</span> z3 <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
 
@@ -1001,6 +1987,7 @@ flag <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;
 <p><a href="https://www.josephsurin.me/posts/2021-02-08-dicectf-2021-garbled">https://www.josephsurin.me/posts/2021-02-08-dicectf-2021-garbled</a></p>
 <p><a href="https://s3v3ru5.github.io/notes/DiceCTF2021#benaloh">https://s3v3ru5.github.io/notes/DiceCTF2021#benaloh</a></p>
 <p><a href="https://priv.pub/posts/dicectf-2021/">https://priv.pub/posts/dicectf-2021/</a></p>
+<p><a href="https://mystiz.hk/posts/2021-02-15-dicectf-1/">https://mystiz.hk/posts/2021-02-15-dicectf-1/</a></p>
 ]]></content>
         </item>
         

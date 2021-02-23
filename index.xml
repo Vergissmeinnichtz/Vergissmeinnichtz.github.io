@@ -7,7 +7,18 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>&lt;a href=&#34;https://creativecommons.org/licenses/by-nc/4.0/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;CC BY-NC 4.0&lt;/a&gt;</copyright>
-    <lastBuildDate>Mon, 08 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://vergissmeinnichtz.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 23 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://vergissmeinnichtz.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>2021UnionCTF-WriteUp</title>
+      <link>https://vergissmeinnichtz.github.io/posts/2021unionctf-writeup/</link>
+      <pubDate>Tue, 23 Feb 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://vergissmeinnichtz.github.io/posts/2021unionctf-writeup/</guid>
+      <description>Introduction This is a small write up and recurrence for 2021UnionCTF.
+Crypto human_server Analysis This is a Diffie-Hellman key exchange challenge:
+import os, random, hashlib, textwrap, json from Crypto.Cipher import AES from Crypto.Util.Padding import pad, unpad from Crypto.Util.number import getPrime, long_to_bytes from fastecdsa.curve import secp256k1 from fastecdsa.point import Point FLAG = b&amp;#39;union{XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX}&amp;#39; CURVE = secp256k1 ORDER = CURVE.q G = CURVE.G class EllipticCurveKeyExchange():∏ def __init__(self): self.private = random.randint(0,ORDER) self.public = self.</description>
+    </item>
+    
     <item>
       <title>2021DiceCTF-WriteUp</title>
       <link>https://vergissmeinnichtz.github.io/posts/2021dicectf-writeup/</link>

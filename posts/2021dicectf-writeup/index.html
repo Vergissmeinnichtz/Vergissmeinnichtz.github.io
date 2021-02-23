@@ -40,7 +40,7 @@ Pwn babyrop Analysis Just a stack overflow and use csu to solve it. Notice that 
 Exp from pwn import * context.log_level = &#34;debug&#34; context.terminal = [&#39;tmux&#39;, &#39;splitw&#39;, &#39;-h&#39;] LOCAL = 0 DEBUG = 0 if LOCAL: r = process(&#34;./babyrop&#34;) libc = ELF(&#34;/lib/x86_64-linux-gnu/libc.so.6&#34;) write_offset = libc.sym[&#34;write&#34;] system_offset = libc.sym[&#34;execve&#34;] else: r = remote(&#34;dicec.tf&#34;,31924) write_offset = 0x1111d0 system_offset = 0xe62f0 if DEBUG: gdb.">
 <meta itemprop="datePublished" content="2021-02-08T00:00:00+00:00" />
 <meta itemprop="dateModified" content="2021-02-08T00:00:00+00:00" />
-<meta itemprop="wordCount" content="4160">
+<meta itemprop="wordCount" content="4538">
 <meta itemprop="image" content="https://vergissmeinnichtz.github.io/"/>
 
 
@@ -95,7 +95,43 @@ Exp from pwn import * context.log_level = &#34;debug&#34; context.terminal = [&#
     
     
         <div class="container">
-            <header class="header">
+            <script type="text/javascript"
+        async
+        src="https://cdn.bootcss.com/mathjax/2.7.3/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[\[','\]\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+
+MathJax.Hub.Queue(function() {
+    
+    
+    
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+
+<style>
+code.has-jax {
+    font: inherit;
+    font-size: 100%;
+    background: inherit;
+    border: inherit;
+    color: #515151;
+}
+</style>
+
+<header class="header">
     <span class="header__inner">
         <a href="/" style="text-decoration: none;">
     <div class="logo">
@@ -141,7 +177,7 @@ Exp from pwn import * context.log_level = &#34;debug&#34; context.terminal = [&#
           <circle cx="12" cy="12" r="10"></circle>
           <polyline points="12 6 12 12 16 14"></polyline>
         </svg>
-        20 minutes
+        22 minutes
 
         
       </p>
@@ -212,7 +248,8 @@ r<span style="color:#f92672">.</span>sendline(p64(system_addr) <span style="colo
 csu(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>,bss <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x108</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">0</span>,bss <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x100</span>,main_addr,<span style="color:#ae81ff">0x40</span>)
 
 r<span style="color:#f92672">.</span>interactive()
-</code></pre></div><h3 id="flippidyrecurrence">flippidy(Recurrence)</h3>
+</code></pre></div><h3 id="flippidy">flippidy</h3>
+<p>This writeup is referenced from <a href="https://teamrocketist.github.io/2021/02/08/Pwn-DiceCTF2021-flippidy/">TeamRocketIST</a></p>
 <h4 id="analysis-1">Analysis</h4>
 <p>This is a no-PIE program.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">Arch:     amd64-64-little
@@ -421,7 +458,8 @@ flip() <span style="color:#75715e"># get shell</span>
 
 r<span style="color:#f92672">.</span>interactive()
 </code></pre></div><h2 id="crypto">Crypto</h2>
-<h3 id="garbledrecurrence">garbled(Recurrence)</h3>
+<h3 id="garbled">garbled</h3>
+<p>This writeup is referenced from <a href="https://www.josephsurin.me/posts/2021-02-08-dicectf-2021-garbled">Joseph</a></p>
 <h4 id="analysis-2">Analysis</h4>
 <p>This is a <code>Garbled Circuit</code> challenge. We should recover the <code>inputs</code> to get flag.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># obtain_flag.py</span>
@@ -984,7 +1022,8 @@ xor_flag <span style="color:#f92672">=</span> <span style="color:#e6db74">b</spa
 flag <span style="color:#f92672">=</span> xor(m<span style="color:#f92672">.</span>digest(),xor_flag)
 <span style="color:#66d9ef">print</span>(flag)
 <span style="color:#75715e"># dice{N0w_YoUr3_Th1nkIn6_Wi7H_pR0t0c015}</span>
-</code></pre></div><h3 id="benalohrecurrence">benaloh(Recurrence)</h3>
+</code></pre></div><h3 id="benaloh">benaloh</h3>
+<p>This writeup is referenced from <a href="https://priv.pub/posts/dicectf-2021/">defund</a></p>
 <h4 id="analysis-3">Analysis</h4>
 <p>This is a <a href="https://en.wikipedia.org/wiki/Benaloh_cryptosystem">Benaloh cryptosystem</a> challenge, the code is short:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># benaloh</span>
@@ -1087,11 +1126,121 @@ pol <span style="color:#f92672">=</span> <span style="color:#f92672">-</span> B[
 flag <span style="color:#f92672">=</span> long_to_bytes(flag)
 <span style="color:#66d9ef">print</span>(flag)
 <span style="color:#75715e"># dice{gr:obner!_!}</span>
+</code></pre></div><h3 id="plagiarism">plagiarism</h3>
+<p>This writeup is referenced from <a href="https://mystiz.hk/posts/2021-02-15-dicectf-1/#plagiarism">mystiz</a></p>
+<h4 id="analysis-4">Analysis</h4>
+<p>This challenge is and <code>Related Message Attack</code> on RSA:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">Two agents, Blex <span style="color:#f92672">and</span> Kane, have simultaneously known very secret message <span style="color:#f92672">and</span> transmitted it to Center<span style="color:#f92672">.</span> You know following:
+<span style="color:#ae81ff">1</span>) They used RSA <span style="color:#66d9ef">with</span> this public key
+<span style="color:#ae81ff">2</span>) They sent exactly the same messages <span style="color:#66d9ef">except</span> the signatures (name appended, eg<span style="color:#f92672">.</span> <span style="color:#e6db74">&#34;[message]Blex&#34;</span>)
+<span style="color:#ae81ff">3</span>) They did encryption this way:
+
+m <span style="color:#f92672">=</span> int(message<span style="color:#f92672">.</span>encode(<span style="color:#e6db74">&#34;hex&#34;</span>), <span style="color:#ae81ff">16</span>)
+c <span style="color:#f92672">=</span> pow(m, e, N)
+
+<span style="color:#ae81ff">4</span>) And here are cryptograms you have intercepted:
+
+N <span style="color:#f92672">=</span> <span style="color:#ae81ff">25898966400928827905718377946331123070958718286581765316565582158865227877882475404853218079499084099440419144196215764927720893687968939899067275095801562867742359933997487928281899714724738097735994026225339488710478292473051567851786254924548138570069406420407124627567648479424564834446192417334669768477661434992797176428220265984651288944265998446714590797833756720922745187467388408600309665467669255896919554072379878017822219455974525233467767926938557154083882126002952139561283708342676308894318951822068027821029295524097544028901807902120777407151278396388621981625398417573347316888458337381776303199529</span>
+
+e <span style="color:#f92672">=</span> <span style="color:#ae81ff">1048577</span>
+
+ciphertext_Blex <span style="color:#f92672">=</span> <span style="color:#ae81ff">11140520553087800834883326476247582685177207584737264356946559762068509060522907835540767944557089926814767920501376431871780404000550271362410228709616559148950928004959648199391157781102695421411667843970881959939688515679415870087007797819271601359811630724878746762862603629420061133824605384527474682526549557804674160851967543475275374840169790764048711047622418045734436512050742433282306694490346907876574514077395835974083376649624559301087384766644865104383786285302561584731767419571603248493060257358632833957327996996960955767927114473513709882904104552609194519132931270741118197821776138632855021619178</span>
+
+ciphertext_Kane <span style="color:#f92672">=</span> <span style="color:#ae81ff">2922817623733019475805146570530296261205732600738503605503192845278422660686627490817081424885152809772315629265930072636690234953045955503581182067349322827011065359648958225896393305011175960879100475146203207801533980643261035226402857047007061320653920746872424363923515091038846823007819033456503365649022294092944985887626605207259444051959239244136999684366533551627508385114998024232490369665950339127904350803268889205463047713233591604324960184727360413931125906144631968128488876241314939855024305076160092193380013725939761970042406866169417457376487954247442308318888399299295082898238584625937490546472</span>
+
+Now tell me that secret message<span style="color:#960050;background-color:#1e0010">!</span> (The answer <span style="color:#66d9ef">for</span> this task starts <span style="color:#f92672">from</span> <span style="color:#e6db74">&#39;dice{&#39;</span>) 
+</code></pre></div><p>The difference from <a href="https://hxp.io/blog/1/RuCTF%20Quals%202014:%20Crypto%20500%20%22decrypt%20message%22%20writeup/">RuCTF Quals 2014: decrypt message</a> is that e is bigger than before.</p>
+<p>So the original method will fail due to runtime issues.</p>
+<p>We can use <a href="http://web.cs.iastate.edu/~cs577/handouts/polydivide.pdf">HGCD</a> instead of GCD to solve this challenge.</p>
+<h4 id="exp-4">Exp</h4>
+<p>This code is written by <code>the entire country of ireland</code> in <a href="https://discord.gg/CbCXtrDE5m">discord</a></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> binascii
+<span style="color:#f92672">from</span> Crypto.Util.number <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">HGCD</span>(p1, p2):
+    deg1 <span style="color:#f92672">=</span> p1<span style="color:#f92672">.</span>degree()
+    deg2 <span style="color:#f92672">=</span> p2<span style="color:#f92672">.</span>degree()
+    
+    m <span style="color:#f92672">=</span> deg1 <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+    
+    <span style="color:#66d9ef">if</span> deg2 <span style="color:#f92672">&lt;=</span> deg1 <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>:
+        <span style="color:#66d9ef">return</span> Matrix(R, [[<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">0</span>],[<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>]])
+
+    p1_coeffs <span style="color:#f92672">=</span> p1<span style="color:#f92672">.</span>coefficients()
+    b1 <span style="color:#f92672">=</span> R(p1_coeffs[m:])
+    c1 <span style="color:#f92672">=</span> R(p1_coeffs[:m])
+
+    p2_coeffs <span style="color:#f92672">=</span> p2<span style="color:#f92672">.</span>coefficients()
+    b2 <span style="color:#f92672">=</span> R(p2_coeffs[m:])
+    c2 <span style="color:#f92672">=</span> R(p2_coeffs[:m])
+
+    M <span style="color:#f92672">=</span> HGCD(b1, b2)
+
+    v <span style="color:#f92672">=</span> M <span style="color:#f92672">*</span> vector([p1, p2])
+    d,e <span style="color:#f92672">=</span> v
+
+    q,r <span style="color:#f92672">=</span> d<span style="color:#f92672">.</span>quo_rem(e)
+    f <span style="color:#f92672">=</span> r
+    U <span style="color:#f92672">=</span> Matrix(R, [[<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>], [<span style="color:#ae81ff">1</span>, <span style="color:#f92672">-</span>q]])
+
+    m <span style="color:#f92672">=</span> m <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>
+
+    e_coeffs <span style="color:#f92672">=</span> e<span style="color:#f92672">.</span>coefficients()
+    g1 <span style="color:#f92672">=</span> R(e_coeffs[m:])
+    h1 <span style="color:#f92672">=</span> R(e_coeffs[:m])
+
+    f_coeffs <span style="color:#f92672">=</span> f<span style="color:#f92672">.</span>coefficients()
+    g2 <span style="color:#f92672">=</span> R(f_coeffs[m:])
+    h2 <span style="color:#f92672">=</span> R(f_coeffs[:m])
+
+
+    S <span style="color:#f92672">=</span> HGCD(g1, g2)
+
+    Result <span style="color:#f92672">=</span> S <span style="color:#f92672">*</span> U <span style="color:#f92672">*</span> M
+    <span style="color:#66d9ef">return</span> Result
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">GCD</span>(p1, p2):
+    q,r <span style="color:#f92672">=</span> p1<span style="color:#f92672">.</span>quo_rem(p2)
+    <span style="color:#66d9ef">if</span> r <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+        <span style="color:#66d9ef">return</span> p2
+    p1,p2 <span style="color:#f92672">=</span> p2, r
+    
+    M <span style="color:#f92672">=</span> HGCD(p1, p2)
+    
+    v <span style="color:#f92672">=</span> M <span style="color:#f92672">*</span> vector([p1, p2])
+    b1, b2 <span style="color:#f92672">=</span> v
+    
+    q,r <span style="color:#f92672">=</span> b1<span style="color:#f92672">.</span>quo_rem(b2)
+    
+    <span style="color:#66d9ef">if</span> r <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+        <span style="color:#66d9ef">return</span> b2
+    
+    <span style="color:#66d9ef">return</span> GCD(b2, r)
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">franklin_reiter</span>(p1, p2):
+    g <span style="color:#f92672">=</span> GCD(p1, p2)
+    a0, a1 <span style="color:#f92672">=</span> g<span style="color:#f92672">.</span>coefficients()
+    <span style="color:#66d9ef">return</span> Integer(<span style="color:#f92672">-</span>a0<span style="color:#f92672">/</span>a1)
+
+N <span style="color:#f92672">=</span> <span style="color:#ae81ff">25898966400928827905718377946331123070958718286581765316565582158865227877882475404853218079499084099440419144196215764927720893687968939899067275095801562867742359933997487928281899714724738097735994026225339488710478292473051567851786254924548138570069406420407124627567648479424564834446192417334669768477661434992797176428220265984651288944265998446714590797833756720922745187467388408600309665467669255896919554072379878017822219455974525233467767926938557154083882126002952139561283708342676308894318951822068027821029295524097544028901807902120777407151278396388621981625398417573347316888458337381776303199529</span>
+e <span style="color:#f92672">=</span> <span style="color:#ae81ff">1048577</span>
+c1 <span style="color:#f92672">=</span> <span style="color:#ae81ff">11140520553087800834883326476247582685177207584737264356946559762068509060522907835540767944557089926814767920501376431871780404000550271362410228709616559148950928004959648199391157781102695421411667843970881959939688515679415870087007797819271601359811630724878746762862603629420061133824605384527474682526549557804674160851967543475275374840169790764048711047622418045734436512050742433282306694490346907876574514077395835974083376649624559301087384766644865104383786285302561584731767419571603248493060257358632833957327996996960955767927114473513709882904104552609194519132931270741118197821776138632855021619178</span>
+c2 <span style="color:#f92672">=</span> <span style="color:#ae81ff">2922817623733019475805146570530296261205732600738503605503192845278422660686627490817081424885152809772315629265930072636690234953045955503581182067349322827011065359648958225896393305011175960879100475146203207801533980643261035226402857047007061320653920746872424363923515091038846823007819033456503365649022294092944985887626605207259444051959239244136999684366533551627508385114998024232490369665950339127904350803268889205463047713233591604324960184727360413931125906144631968128488876241314939855024305076160092193380013725939761970042406866169417457376487954247442308318888399299295082898238584625937490546472</span>
+delta  <span style="color:#f92672">=</span> int(binascii<span style="color:#f92672">.</span>hexlify(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;Kane&#39;</span>), <span style="color:#ae81ff">16</span>) <span style="color:#f92672">-</span> int(binascii<span style="color:#f92672">.</span>hexlify(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;Blex&#39;</span>), <span style="color:#ae81ff">16</span>)
+
+R<span style="color:#f92672">.&lt;</span>x<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> PolynomialRing(IntegerModRing(N))
+p1 <span style="color:#f92672">=</span> x<span style="color:#f92672">^</span>e <span style="color:#f92672">-</span> c1
+p2 <span style="color:#f92672">=</span> (x<span style="color:#f92672">+</span>delta)<span style="color:#f92672">^</span>e <span style="color:#f92672">-</span> c2
+
+flag <span style="color:#f92672">=</span> franklin_reiter(p1, p2)
+flag <span style="color:#f92672">=</span> long_to_bytes(flag)
+<span style="color:#66d9ef">print</span>(flag)
 </code></pre></div><h2 id="reverse">Reverse</h2>
 <h3 id="babymix">babymix</h3>
-<h4 id="analysis-4">Analysis</h4>
+<h4 id="analysis-5">Analysis</h4>
 <p>Just use z3 to solve it.</p>
-<h4 id="exp-4">Exp</h4>
+<h4 id="exp-5">Exp</h4>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python</span>
 <span style="color:#f92672">from</span> z3 <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
 
@@ -1140,6 +1289,7 @@ flag <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;
 <p><a href="https://www.josephsurin.me/posts/2021-02-08-dicectf-2021-garbled">https://www.josephsurin.me/posts/2021-02-08-dicectf-2021-garbled</a></p>
 <p><a href="https://s3v3ru5.github.io/notes/DiceCTF2021#benaloh">https://s3v3ru5.github.io/notes/DiceCTF2021#benaloh</a></p>
 <p><a href="https://priv.pub/posts/dicectf-2021/">https://priv.pub/posts/dicectf-2021/</a></p>
+<p><a href="https://mystiz.hk/posts/2021-02-15-dicectf-1/">https://mystiz.hk/posts/2021-02-15-dicectf-1/</a></p>
 
       </div>
     </article>
@@ -1167,7 +1317,7 @@ flag <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;
           <line x1="16" y1="17" x2="8" y2="17"></line>
           <polyline points="10 9 9 9 8 9"></polyline>
         </svg>
-        4160 Words
+        4538 Words
       </p>
 
       <p>
@@ -1288,6 +1438,13 @@ flag <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;
         </div>
 
         <div class="pagination__buttons">
+          
+            <span class="button previous">
+              <a href="https://vergissmeinnichtz.github.io/posts/2021unionctf-writeup/">
+                <span class="button__icon">←</span>
+                <span class="button__text">2021UnionCTF-WriteUp</span>
+              </a>
+            </span>
           
 
           
